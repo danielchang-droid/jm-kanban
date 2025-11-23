@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>JM Kanban — Team</title>
+  <style>
+    :root{
+      --bg:#0b0d12;
+      --bg2:#121722;
+      --card:#161b26;
+      --card2:#1c2230;
+      --text:#e6e9ef;
+      --muted:#9aa3b2;
+      --accent:#7c5cff;
+      --accent2:#22c55e;
+      --danger:#ef4444;
+      --warn:#f59e0b;
+      --line:#242b3b;
+      --radius:16px;
+    }
+    *{box-sizing:border-box;}
+    body{
+      margin:0;
+      color:var(--text);
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background:
+        radial-gradient(1200px 800px at 10% -10%, #1c1f2b 0%, transparent 60%),
+        radial-gradient(1000px 700px at 110% 0%, #151a2d 0%, transparent 60%),
+        var(--bg);
+      height:100vh;
+      display:flex;
+      flex-direction:column;
+    }
+    header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:12px 16px;
+      border-bottom:1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
+      position:sticky; top:0; z-index:2;
+    }
+    .brand{
+      display:flex; align-items:center; gap:12px;
+      font-weight:700; letter-spacing:.2px;
+    }
+    .brand .pill{
+      padding:6px 10px; border:1px solid var(--line);
+      background:rgba(255,255,255,0.03); border-radius:999px;
+    }
+    .toolbar{
+      display:flex; align-items:center; gap:8px;
+    }
+    button, select, input, textarea{
+      font: inherit; color:inherit;
+      border:1px solid var(--line);
+      background:var(--bg2);
+      border-radius:10px;
+      padding:8px 10px;
+      outline:none;
+    }
+    button{
+      cursor:pointer;
+      background: linear-gradient(180deg, #20263a, #151b2a);
+      transition: .15s ease;
+    }
+    button:hover{ transform: translateY(-1px); border-color:#2f3950; }
+    button.primary{
+      background: linear-gradient(180deg, #8a6bff, #6d47ff);
+      border-color:#6d47ff;
+      color:white;
+      font-weight:600;
+    }
+    button.ghost{
+      background:transparent;
+    }
+
+    main{
+      flex:1; display:flex; gap:12px; padding:12px;
+      overflow:auto;
+    }
+    .col{
+      min-width:320px; max-width:360px; flex:1;
+      background:rgba(255,255,255,0.02);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      display:flex; flex-direction:column;
+      overflow:hidden;
+    }
+    .col h3{
+      margin:0; padding:12px;
+      border-bottom:1px solid var(--line);
+      display:flex; align-items:center; justify-content:space-between;
+      font-size:14px; font-weight:700; letter-spacing:.3px;
+      background:rgba(255,255,255,0.02);
+    }
+    .col .count{
+      font-size:12px; color:var(--muted); font-weight:600;
+      padding:2px 8px; border-radius:999px; background:var(--bg2);
+      border:1px solid var(--line);
+    }
+    .list{
+      flex:1; padding:10px; display:flex; flex-direction:column; gap:8px;
+      overflow:auto;
+    }
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:10px;
+      display:flex; flex-direction:column; gap:6px;
+      cursor:grab;
+    }
+    .card.dragging{ opacity:.5; }
+    .card .title{
+      font-weight:700; font-size:14px;
+    }
+    .card .meta{
+      display:flex; flex-wrap:wrap; gap:6px; font-size:12px; color:var(--muted);
+    }
+    .badge{
+      display:inline-flex; align-items:center; gap:6px;
+      background:var(--card2);
+      border:1px solid var(--line);
+      padding:2px 8px; border-radius:999px;
+    }
+    .due{ color:#cbd5e1; }
+    .due.overdue{ color:#ffb4b4; }
+
+    /* modal */
+    .modal-backdrop{
+      position:fixed; inset:0; background:rgba(0,0,0,.55);
+      display:none; align-items:center; justify-content:center; z-index:10;
+    }
+    .modal{
+      width:min(700px, 95vw);
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:14px;
+      box-shadow:0 10px 40px rgba(0,0,0,.6);
+    }
+    .modal header{
+      position:unset; background:transparent; border:0;
+      padding:0 0 8px 0;
+    }
+    .modal .grid{
+      display:grid; grid-template-columns:1fr 1fr; gap:10px;
+    }
+    .modal label{
+      font-size:12px; color:var(--muted); font-weight:600;
+      display:block; margin:6px 0 4px;
+    }
+    .modal textarea{ min-height:80px; resize:vertical; }
+    .modal .actions{
+      margin-top:10px; display:flex; justify-content:flex-end; gap:8px;
+    }
+
+    /* notifications */
+    .notif-btn{
+      position:relative;
+    }
+    .dot{
+      position:absolute; right:-2px; top:-2px;
+      width:10px; height:10px; border-radius:50%;
+      background:var(--danger); border:2px solid var(--bg2);
+      display:none;
+    }
+    .notif-panel{
+      position:fixed; right:16px; top:60px; width:min(420px, 95vw);
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:10px;
+      display:none; flex-direction:column; gap:8px; z-index:5;
+      max-height:60vh; overflow:auto;
+    }
+    .notif-item{
+      background:var(--card2); border:1px solid var(--line);
+      border-radius:12px; padding:8px; font-size:13px;
+      display:flex; justify-content:space-between; align-items:center; gap:8px;
+    }
+    .empty{
+      color:var(--muted); font-size:13px; text-align:center; padding:24px;
+    }
+
+    .footer-hint{
+      font-size:12px; color:var(--muted);
+      padding:6px 12px; border-top:1px dashed var(--line);
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="pill">JM Kanban</div>
+    <div style="color:var(--muted); font-size:12px;">Team board</div>
+  </div>
+  <div class="toolbar">
+    <button class="ghost notif-btn" id="notifBtn" title="Notifications">
+      🔔
+      <span class="dot" id="notifDot"></span>
+    </button>
+
+    <select id="langSel" title="Language">
+      <option value="en">English</option>
+      <option value="zh">中文</option>
+      <option value="th">ไทย</option>
+      <option value="ru">Русский</option>
+    </select>
+
+    <button class="primary" id="addBtn">+ Add task</button>
+    <button id="refreshBtn">⟳ Refresh</button>
+  </div>
+</header>
+
+<div class="notif-panel" id="notifPanel"></div>
+
+<main id="board">
+  <div class="col" data-status="todo">
+    <h3><span id="todoTitle">To Do</span> <span class="count" id="todoCount">0</span></h3>
+    <div class="list" id="todoList"></div>
+    <div class="footer-hint" id="todoHint"></div>
+  </div>
+
+  <div class="col" data-status="doing">
+    <h3><span id="doingTitle">Doing</span> <span class="count" id="doingCount">0</span></h3>
+    <div class="list" id="doingList"></div>
+    <div class="footer-hint" id="doingHint"></div>
+  </div>
+
+  <div class="col" data-status="done">
+    <h3><span id="doneTitle">Done</span> <span class="count" id="doneCount">0</span></h3>
+    <div class="list" id="doneList"></div>
+    <div class="footer-hint" id="doneHint"></div>
+  </div>
+</main>
+
+<!-- Modal -->
+<div class="modal-backdrop" id="backdrop">
+  <div class="modal">
+    <header style="display:flex; justify-content:space-between; align-items:center;">
+      <div style="font-weight:800; font-size:16px;" id="modalTitle">Create task</div>
+      <button class="ghost" id="closeModal">✕</button>
+    </header>
+
+    <div class="grid">
+      <div>
+        <label id="lblTitle">Title</label>
+        <input id="taskTitle" placeholder="e.g. Follow up client A2-19" />
+      </div>
+      <div>
+        <label id="lblAssignee">Assignee (Name)</label>
+        <input id="taskAssignee" placeholder="e.g. Lita" />
+      </div>
+      <div>
+        <label id="lblDue">Due date</label>
+        <input id="taskDue" type="date" />
+      </div>
+      <div>
+        <label id="lblStatus">Status</label>
+        <select id="taskStatus">
+          <option value="todo">To do</option>
+          <option value="doing">Doing</option>
+          <option value="done">Done</option>
+        </select>
+      </div>
+      <div style="grid-column:1/-1;">
+        <label id="lblDesc">Description</label>
+        <textarea id="taskDesc" placeholder="Details..."></textarea>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="cancelBtn">Cancel</button>
+      <button class="primary" id="saveBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/** =========================================================
+ *  CONFIG — 你只需要改这一行！
+ *  ========================================================= */
+// ✅ 把下面改成你的完整 Web App URL（不要省略号）
+const API_BASE = "https://script.google.com/a/macros/cloverth.net/s/AKfycbzwN3vAslx4po-ysK0RA32LVF6rqoF9CIdoE1Z75kEN_jnfaHsABPn15NoyIYvnlc4l/exec";
+
+/** =========================================================
+ *  i18n
+ *  ========================================================= */
+const I18N = {
+  en:{
+    todo:"To Do", doing:"Doing", done:"Done",
+    create:"Create task", edit:"Edit task",
+    title:"Title", assignee:"Assignee (Name)", due:"Due date", status:"Status", desc:"Description",
+    cancel:"Cancel", save:"Save",
+    hint:"Drag tasks here", empty:"No tasks",
+    notifEmpty:"No notifications"
+  },
+  zh:{
+    todo:"待办", doing:"进行中", done:"已完成",
+    create:"新建任务", edit:"编辑任务",
+    title:"标题", assignee:"负责人（名字）", due:"截止日期", status:"状态", desc:"任务说明",
+    cancel:"取消", save:"保存",
+    hint:"拖动任务到这里", empty:"暂无任务",
+    notifEmpty:"暂无通知"
+  },
+  th:{
+    todo:"งานที่ต้องทำ", doing:"กำลังทำ", done:"เสร็จแล้ว",
+    create:"สร้างงาน", edit:"แก้ไขงาน",
+    title:"หัวข้อ", assignee:"ผู้รับผิดชอบ (ชื่อ)", due:"วันครบกำหนด", status:"สถานะ", desc:"รายละเอียด",
+    cancel:"ยกเลิก", save:"บันทึก",
+    hint:"ลากงานมาที่นี่", empty:"ไม่มีงาน",
+    notifEmpty:"ไม่มีการแจ้งเตือน"
+  },
+  ru:{
+    todo:"Сделать", doing:"В работе", done:"Готово",
+    create:"Создать задачу", edit:"Редактировать",
+    title:"Название", assignee:"Ответственный (имя)", due:"Срок", status:"Статус", desc:"Описание",
+    cancel:"Отмена", save:"Сохранить",
+    hint:"Перетащите сюда", empty:"Нет задач",
+    notifEmpty:"Нет уведомлений"
+  }
+};
+
+let LANG = "en";
+const el = id => document.getElementById(id);
+
+/** =========================================================
+ *  State
+ *  ========================================================= */
+let tasks = [];
+let notifications = [];
+let currentUserEmail = "";
+
+/** =========================================================
+ *  API helpers
+ *  ========================================================= */
+async function apiGet(action, params={}){
+  const url = new URL(API_BASE);
+  url.searchParams.set("action", action);
+  Object.entries(params).forEach(([k,v]) => url.searchParams.set(k,v));
+  const res = await fetch(url.toString(), {method:"GET"});
+  return res.json();
+}
+async function apiPost(action, body={}){
+  const url = new URL(API_BASE);
+  url.searchParams.set("action", action);
+  const res = await fetch(url.toString(), {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify(body)
+  });
+  return res.json();
+}
+
+/** =========================================================
+ *  UI render
+ *  ========================================================= */
+function setLang(lang){
+  LANG = lang;
+  const t = I18N[LANG];
+
+  el("todoTitle").textContent = t.todo;
+  el("doingTitle").textContent = t.doing;
+  el("doneTitle").textContent = t.done;
+
+  el("modalTitle").textContent = t.create;
+
+  el("lblTitle").textContent = t.title;
+  el("lblAssignee").textContent = t.assignee;
+  el("lblDue").textContent = t.due;
+  el("lblStatus").textContent = t.status;
+  el("lblDesc").textContent = t.desc;
+
+  el("cancelBtn").textContent = t.cancel;
+  el("saveBtn").textContent = t.save;
+
+  el("todoHint").textContent = t.hint;
+  el("doingHint").textContent = t.hint;
+  el("doneHint").textContent = t.hint;
+
+  renderBoard();
+  renderNotifs();
+}
+
+function renderBoard(){
+  const t = I18N[LANG];
+  const todoList = el("todoList");
+  const doingList = el("doingList");
+  const doneList = el("doneList");
+  todoList.innerHTML = ""; doingList.innerHTML=""; doneList.innerHTML="";
+
+  const grouped = {todo:[], doing:[], done:[]};
+  tasks.forEach(x => grouped[x.status]?.push(x));
+
+  for (const st of ["todo","doing","done"]){
+    if (grouped[st].length===0){
+      const empty = document.createElement("div");
+      empty.className="empty";
+      empty.textContent = t.empty;
+      el(st+"List").appendChild(empty);
+    }else{
+      grouped[st].forEach(task=>{
+        el(st+"List").appendChild(taskCard(task));
+      });
+    }
+    el(st+"Count").textContent = grouped[st].length;
+  }
+}
+
+function taskCard(task){
+  const c = document.createElement("div");
+  c.className="card";
+  c.draggable = true;
+  c.dataset.id = task.id;
+
+  const dueStr = task.dueDate || "";
+  let dueClass = "due";
+  if (dueStr){
+    const d = new Date(dueStr);
+    const today = new Date(); today.setHours(0,0,0,0);
+    if (d < today && task.status!=="done") dueClass += " overdue";
+  }
+
+  c.innerHTML = `
+    <div class="title">${escapeHtml(task.title || "")}</div>
+    <div class="meta">
+      ${task.assigneeName ? `<span class="badge">👤 ${escapeHtml(task.assigneeName)}</span>`:""}
+      ${dueStr ? `<span class="badge ${dueClass}">📅 ${dueStr}</span>`:""}
+    </div>
+    ${task.description ? `<div style="font-size:12px;color:var(--muted);line-height:1.4">${escapeHtml(task.description)}</div>`:""}
+  `;
+
+  // drag events
+  c.addEventListener("dragstart", e=>{
+    c.classList.add("dragging");
+    e.dataTransfer.setData("text/plain", task.id);
+  });
+  c.addEventListener("dragend", ()=>{
+    c.classList.remove("dragging");
+  });
+
+  return c;
+}
+
+function renderNotifs(){
+  const t = I18N[LANG];
+  const panel = el("notifPanel");
+  panel.innerHTML="";
+
+  if (notifications.length===0){
+    const empty=document.createElement("div");
+    empty.className="empty";
+    empty.textContent=t.notifEmpty;
+    panel.appendChild(empty);
+    el("notifDot").style.display="none";
+    return;
+  }
+
+  const unread = notifications.filter(n=>n.state==="UNREAD").length;
+  el("notifDot").style.display = unread>0 ? "block":"none";
+
+  notifications.forEach(n=>{
+    const item=document.createElement("div");
+    item.className="notif-item";
+    item.innerHTML=`
+      <div>
+        <div style="font-weight:700;font-size:12px">${n.type}</div>
+        <div style="font-size:12px;color:var(--muted)">
+          Task: ${n.taskId.slice(0,8)} • ${n.createdAt}
+        </div>
+      </div>
+      <button class="ghost" style="font-size:12px" data-id="${n.id}">Mark read</button>
+    `;
+    item.querySelector("button").addEventListener("click", async()=>{
+      await apiPost("deletenotification",{id:n.id});
+      await loadNotifs();
+    });
+    panel.appendChild(item);
+  });
+}
+
+/** =========================================================
+ *  Loaders
+ *  ========================================================= */
+async function loadTasks(){
+  const r = await apiGet("listTasks");
+  if (!r.ok) throw new Error(r.error||"listTasks failed");
+  tasks = r.data || [];
+  renderBoard();
+}
+
+async function loadNotifs(){
+  const r = await apiGet("listNotifications", currentUserEmail?{email:currentUserEmail}:{});
+  if (!r.ok) throw new Error(r.error||"listNotifications failed");
+  notifications = r.data || [];
+  renderNotifs();
+}
+
+/** =========================================================
+ *  Modal open/close
+ *  ========================================================= */
+function openModal(){
+  el("taskTitle").value="";
+  el("taskAssignee").value="";
+  el("taskDue").value="";
+  el("taskDesc").value="";
+  el("taskStatus").value="todo";
+  el("backdrop").style.display="flex";
+}
+function closeModal(){
+  el("backdrop").style.display="none";
+}
+
+/** =========================================================
+ *  Events
+ *  ========================================================= */
+el("addBtn").addEventListener("click", openModal);
+el("closeModal").addEventListener("click", closeModal);
+el("cancelBtn").addEventListener("click", closeModal);
+el("refreshBtn").addEventListener("click", async()=>{
+  await loadTasks();
+  await loadNotifs();
+});
+el("langSel").addEventListener("change", e=>setLang(e.target.value));
+
+el("notifBtn").addEventListener("click", ()=>{
+  const p = el("notifPanel");
+  p.style.display = p.style.display==="flex" ? "none":"flex";
+});
+
+// Save task
+el("saveBtn").addEventListener("click", async()=>{
+  const title = el("taskTitle").value.trim();
+  const assigneeName = el("taskAssignee").value.trim();
+  const dueDate = el("taskDue").value;
+  const description = el("taskDesc").value.trim();
+  const status = el("taskStatus").value;
+
+  if (!title){
+    alert("Title required");
+    return;
+  }
+
+  const body = { title, assigneeName, dueDate, description, status, createdBy: currentUserEmail };
+  const r = await apiPost("createTask", body);
+  if (!r.ok){
+    alert("Create failed: " + (r.error||""));
+    return;
+  }
+  closeModal();
+  await loadTasks();
+  await loadNotifs();
+});
+
+// Drop zones
+document.querySelectorAll(".list").forEach(list=>{
+  list.addEventListener("dragover", e=>{
+    e.preventDefault();
+  });
+  list.addEventListener("drop", async e=>{
+    e.preventDefault();
+    const id = e.dataTransfer.getData("text/plain");
+    const col = list.closest(".col");
+    const status = col.dataset.status;
+    await apiPost("updateTask",{id, patch:{status}});
+    await loadTasks();
+  });
+});
+
+/** =========================================================
+ *  Helpers
+ *  ========================================================= */
+function escapeHtml(s){
+  return s.replace(/[&<>"']/g, m=>({
+    "&":"&amp;","<":"&lt;",">":"&gt;",
+    '"':"&quot;","'":"&#39;"
+  }[m]));
+}
+
+/** =========================================================
+ *  Init
+ *  ========================================================= */
+(async function init(){
+  // Ask user email once (for notifications / createdBy)
+  currentUserEmail = localStorage.getItem("jm_user_email") || "";
+  if (!currentUserEmail){
+    currentUserEmail = prompt("Please enter your company email (for notifications):")?.trim().toLowerCase() || "";
+    if (currentUserEmail) localStorage.setItem("jm_user_email", currentUserEmail);
+  }
+
+  setLang(LANG);
+
+  try{
+    await loadTasks();
+    await loadNotifs();
+  }catch(err){
+    console.error(err);
+    alert("Init error: " + err.message + "\nCheck API_BASE is correct & Web App access is Workspace/Anyone.");
+  }
+
+  // Auto refresh every 30s
+  setInterval(async()=>{
+    try{
+      await loadTasks();
+      await loadNotifs();
+    }catch(e){}
+  }, 30000);
+})();
+</script>
+
+</body>
+</html>
