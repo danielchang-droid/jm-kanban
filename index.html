@@ -2,380 +2,374 @@
 <html lang="zh">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>JM Kanban — Team</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
     :root{
-      --bg:#0b0c10;--panel:#11131a;--panel2:#151824;--text:#e8ebf5;--muted:#9aa3b2;
-      --accent:#7c5cff;--accent2:#5fd4ff;--danger:#ff6b6b;
-      --radius:18px;
+      --bg:#090b10;--panel:#11131a;--panel2:#151824;--text:#e8ebf5;--muted:#9aa3b2;
+      --accent:#7c5cff;--accent2:#02d2a1;--danger:#ff6b6b;--warn:#ffb454;
+      --radius:16px;
     }
     *{box-sizing:border-box}
-    body{
-      margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--text);
-      background:
-        radial-gradient(1200px 800px at 10% -10%,#1c1f2b 0%,transparent 60%),
-        radial-gradient(1000px 700px at 110% 0%,#151a2d 0%,transparent 60%),
-        var(--bg);
-      height:100vh;display:flex;flex-direction:column;
-    }
-    header{
-      display:flex;align-items:center;justify-content:space-between;
-      padding:14px 18px;border-bottom:1px solid rgba(255,255,255,.06);
-      background:linear-gradient(180deg,rgba(255,255,255,.03),transparent);
-      position:sticky;top:0;z-index:10;
-    }
-    .brand{display:flex;gap:10px;align-items:center;font-weight:700}
-    .dot{width:8px;height:8px;border-radius:50%;background:var(--accent2);box-shadow:0 0 12px var(--accent2)}
-    .toolbar{display:flex;gap:8px;align-items:center}
-    button{
-      background:var(--panel2);border:1px solid rgba(255,255,255,.08);
-      color:var(--text);padding:8px 12px;border-radius:10px;cursor:pointer;font-weight:600;
-    }
-    button.primary{background:linear-gradient(90deg,#6b6bff,#8d5cff);border:none}
-    button.ghost{background:transparent}
+    body{margin:0;font-family:Inter,system-ui;background:
+      radial-gradient(1200px 800px at 10% -10%, #1c1f2b 0%, transparent 50%),
+      radial-gradient(1000px 700px at 110% 0%, #151a2d 0%, transparent 55%),
+      var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;}
+    header{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid #1c2030;}
+    .logo{font-weight:800;letter-spacing:.5px}
+    .spacer{flex:1}
+    button{background:var(--panel2);color:var(--text);border:1px solid #22273a;padding:8px 12px;border-radius:10px;cursor:pointer}
+    button.primary{background:var(--accent);border-color:transparent}
+    button.ghost{background:transparent;border-color:#2a3047}
     button:disabled{opacity:.5;cursor:not-allowed}
-
-    main{flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:12px;overflow:auto}
-    .col{
-      background:var(--panel);border:1px solid rgba(255,255,255,.06);
-      border-radius:var(--radius);padding:10px;display:flex;flex-direction:column;min-height:300px;
-    }
-    .col h3{margin:4px 4px 8px;font-size:14px;color:var(--muted);display:flex;justify-content:space-between}
-    .count{font-size:12px;color:var(--muted)}
-    .dropzone{flex:1;display:flex;flex-direction:column;gap:8px;min-height:120px;padding:4px;border-radius:12px}
-    .dropzone.dragover{outline:2px dashed var(--accent);background:rgba(124,92,255,.06)}
-
-    .card{
-      background:var(--panel2);border:1px solid rgba(255,255,255,.08);
-      border-radius:14px;padding:10px;cursor:grab;display:flex;flex-direction:column;gap:6px;
-    }
-    .card .title{font-weight:700}
-    .meta{display:flex;gap:6px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
-    .badge{
-      padding:2px 6px;border-radius:999px;font-size:11px;font-weight:700;
-      background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);
-    }
-    .badge.priority{background:rgba(255,107,107,.12);border-color:rgba(255,107,107,.5);color:#ffb3b3}
-    .badge.planned{background:rgba(95,212,255,.12);border-color:rgba(95,212,255,.45);color:#b6edff}
-    .linkbtn{
-      font-size:12px;text-decoration:none;color:#c7d2ff;background:rgba(124,92,255,.12);
-      padding:4px 8px;border-radius:8px;display:inline-flex;gap:6px;align-items:center;
-      border:1px solid rgba(124,92,255,.4);width:max-content;
-    }
-
-    /* Modal */
-    .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:50}
-    .modal{width:520px;max-width:95vw;background:var(--panel);border:1px solid rgba(255,255,255,.08);
-      border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:8px}
-    .modal header{position:static;background:none;border:none;padding:0;margin-bottom:6px}
-    .row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .badge{font-size:12px;padding:2px 8px;border-radius:999px;background:#20263a;color:#cbd2e6}
+    .badge.urgent{background:#3a1f1f;color:#ffb3b3}
+    .badge.priority{background:#2a2a48;color:#c8c2ff}
+    .badge.plan{background:#1f3340;color:#b8f0ff}
+    .badge.pending{background:#3a2d14;color:#ffd28a}
+    main{flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:14px;padding:14px;overflow:auto}
+    .col{background:rgba(17,19,26,.9);border:1px solid #20263a;border-radius:18px;padding:10px;display:flex;flex-direction:column;min-height:70vh}
+    .col h3{margin:6px 8px 10px;font-size:16px;color:#d9def0;display:flex;justify-content:space-between;align-items:center}
+    .list{flex:1;display:flex;flex-direction:column;gap:8px;padding:4px}
+    .empty{color:var(--muted);font-size:13px;text-align:center;padding:18px;border:1px dashed #22273a;border-radius:12px}
+    .card{background:#0f1118;border:1px solid #242b42;border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:6px}
+    .card.dragging{opacity:.5}
+    .title{font-weight:700}
+    .meta{font-size:12px;color:var(--muted);display:flex;gap:8px;flex-wrap:wrap}
+    .link{font-size:12px;color:#9cc3ff;text-decoration:underline;word-break:break-all}
+    .actions{display:flex;gap:6px;margin-top:6px}
+    .actions button{font-size:12px;padding:6px 8px}
+    /* modal */
+    .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;padding:18px}
+    .modal{width:min(680px,100%);background:#0f1118;border:1px solid #252c45;border-radius:18px;padding:16px}
+    .modal h2{margin:0 0 12px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
     label{font-size:12px;color:var(--muted)}
-    input,textarea,select{
-      width:100%;padding:8px;border-radius:10px;border:1px solid rgba(255,255,255,.1);
-      background:var(--panel2);color:var(--text);outline:none;
+    input,select,textarea{
+      width:100%;background:#0b0d13;border:1px solid #252c45;color:var(--text);
+      padding:8px 10px;border-radius:10px;font-size:14px;outline:none
     }
     textarea{min-height:80px;resize:vertical}
-    .modal .actions{display:flex;justify-content:flex-end;gap:8px;margin-top:6px}
-
-    .hint{font-size:12px;color:var(--muted)}
+    .row{display:flex;flex-direction:column;gap:6px}
+    .footer{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
   </style>
 </head>
 <body>
 <header>
-  <div class="brand"><span class="dot"></span> JM Kanban <span class="hint">Team board</span></div>
-  <div class="toolbar">
-    <button class="ghost" id="btnRefresh">↻ Refresh</button>
-    <button class="primary" id="btnAdd">＋ Add task</button>
-  </div>
+  <div class="logo">● JM Kanban</div>
+  <div class="badge" id="userBadge">not logged in</div>
+  <div class="spacer"></div>
+  <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px">
+    <input type="checkbox" id="showAllToggle" style="width:auto" />
+    Admin: view all
+  </label>
+  <button id="refreshBtn" class="ghost">↻ Refresh</button>
+  <button id="addBtn" class="primary">＋ Add task</button>
 </header>
 
 <main>
   <section class="col" data-status="To Do">
-    <h3><span>To Do</span> <span class="count" id="countTodo">0</span></h3>
-    <div class="dropzone" id="todoZone"></div>
+    <h3>To Do <span class="badge" id="cntTodo">0</span></h3>
+    <div class="list" id="listTodo"></div>
   </section>
-
   <section class="col" data-status="Doing">
-    <h3><span>Doing</span> <span class="count" id="countDoing">0</span></h3>
-    <div class="dropzone" id="doingZone"></div>
+    <h3>Doing <span class="badge" id="cntDoing">0</span></h3>
+    <div class="list" id="listDoing"></div>
   </section>
-
   <section class="col" data-status="Done">
-    <h3><span>Done</span> <span class="count" id="countDone">0</span></h3>
-    <div class="dropzone" id="doneZone"></div>
+    <h3>Done <span class="badge" id="cntDone">0</span></h3>
+    <div class="list" id="listDone"></div>
   </section>
 </main>
 
-<!-- Modal -->
+<!-- modal -->
 <div class="backdrop" id="backdrop">
   <div class="modal">
-    <header style="display:flex;justify-content:space-between;align-items:center;">
-      <div style="font-weight:800">Create task</div>
-      <button class="ghost" id="btnClose">✕</button>
-    </header>
-
-    <label>Title</label>
-    <input id="taskTitle" placeholder="e.g. Follow up client A2-3">
-
-    <div class="row">
-      <div>
-        <label>Assignee (Name)</label>
-        <input id="taskAssigneeName" placeholder="e.g. Lita">
+    <h2>Create task</h2>
+    <div class="grid">
+      <div class="row">
+        <label>Title</label>
+        <input id="tTitle" placeholder="e.g. Follow up client A2-xx" />
       </div>
-      <div>
-        <label>Assignee Email</label>
-        <input id="taskAssigneeEmail" placeholder="e.g. lita@cloverth.net">
+      <div class="row">
+        <label>Assignee (email)</label>
+        <select id="tAssignee"></select>
       </div>
-    </div>
-
-    <div class="row">
-      <div>
+      <div class="row">
         <label>Due date</label>
-        <input id="taskDueDate" type="date">
+        <input id="tDue" type="date"/>
       </div>
-      <div>
+      <div class="row">
+        <label>Priority</label>
+        <select id="tPriority">
+          <option value="Urgent">Urgent</option>
+          <option value="Priority">Priority</option>
+          <option value="Plan" selected>Plan</option>
+        </select>
+      </div>
+      <div class="row" style="grid-column:1/-1">
+        <label>Description</label>
+        <textarea id="tDesc"></textarea>
+      </div>
+      <div class="row" style="grid-column:1/-1">
+        <label>Google link / attachment</label>
+        <input id="tLink" placeholder="Paste Google Drive/Doc/Sheet link here"/>
+      </div>
+      <div class="row">
         <label>Status</label>
-        <select id="taskStatus">
+        <select id="tStatus">
           <option>To Do</option>
           <option>Doing</option>
-          <option>Done</option>
         </select>
       </div>
     </div>
-
-    <div class="row">
-      <div>
-        <label>Priority</label>
-        <select id="taskPriority">
-          <option value="Priority">Priority (优先)</option>
-          <option value="Planned" selected>Planned (计划)</option>
-        </select>
-      </div>
-      <div>
-        <label>Google Link (附件)</label>
-        <input id="taskLink" placeholder="Paste Google Drive/Docs link">
-      </div>
-    </div>
-
-    <label>Description</label>
-    <textarea id="taskDesc" placeholder="Details..."></textarea>
-
-    <div class="actions">
-      <button id="btnCancel">Cancel</button>
-      <button class="primary" id="btnSave">Save</button>
+    <div class="footer">
+      <button id="cancelBtn">Cancel</button>
+      <button id="saveBtn" class="primary">Save</button>
     </div>
   </div>
 </div>
 
 <script>
-/** ================== CONFIG ================== **/
+/** ===== CONFIG ===== */
 const API_BASE = "https://script.google.com/macros/s/AKfycbw5DMgrN-uG_FzPyn83P8SIg9E37BLipNTwnC5mEy2RyS_CIPTj_3XiOE-y5TahZDKP/exec";
-const COMPANY_DOMAIN = "cloverth.net";
-const ADMIN_EMAILS = ["danielchang@cloverth.net"]; // 前端仅用于显示
 
-let currentUserEmail = "";
-let tasks = [];
-
-/** ================== JSONP CORE ================== **/
-function jsonp(action, data={}){
+/** ===== JSONP helper ===== */
+function jsonp(action, params={}){
   return new Promise((resolve,reject)=>{
-    const cb = "cb_"+Math.random().toString(36).slice(2);
+    const cb = "cb_" + Math.random().toString(36).slice(2);
     window[cb] = (res)=>{
-      delete window[cb];
-      script.remove();
-      resolve(res);
+      cleanup();
+      if(!res.ok) reject(new Error(res.error||"API error"));
+      else resolve(res.data);
     };
-    const payload = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
-    const url = `${API_BASE}?action=${encodeURIComponent(action)}&data=${encodeURIComponent(payload)}&callback=${cb}&_=${Date.now()}`;
-    const script = document.createElement("script");
-    script.src = url;
-    script.onerror = ()=>{ delete window[cb]; script.remove(); reject(new Error("JSONP load error")); };
-    document.body.appendChild(script);
+    const q = new URLSearchParams({ action, callback: cb, ...params }).toString();
+    const s = document.createElement("script");
+    s.src = API_BASE + "?" + q;
+    s.onerror = ()=>{ cleanup(); reject(new Error("JSONP load error")); };
+    document.body.appendChild(s);
+    function cleanup(){
+      delete window[cb];
+      s.remove();
+    }
   });
 }
 
-/** ================== LOGIN ================== **/
-function isAdmin(email){
-  return ADMIN_EMAILS.includes(String(email||"").toLowerCase());
-}
+/** ===== State ===== */
+let currentUserEmail = localStorage.getItem("jm_user_email") || "";
+let isAdmin = false;
+let directory = [];
+let tasks = [];
+let showAll = false;
 
-async function init(){
-  currentUserEmail = localStorage.getItem("jm_user_email") || "";
-  while(true){
-    if(!currentUserEmail){
-      currentUserEmail = prompt("请输入公司邮箱（@cloverth.net）用于登录：")?.trim().toLowerCase() || "";
-    }
-    if(currentUserEmail.endsWith("@"+COMPANY_DOMAIN)){
-      localStorage.setItem("jm_user_email", currentUserEmail);
-      break;
-    }
-    alert("只允许使用 @cloverth.net 邮箱登录。");
+/** ===== DOM ===== */
+const userBadge = document.getElementById("userBadge");
+const showAllToggle = document.getElementById("showAllToggle");
+const addBtn = document.getElementById("addBtn");
+const refreshBtn = document.getElementById("refreshBtn");
+
+const listTodo = document.getElementById("listTodo");
+const listDoing = document.getElementById("listDoing");
+const listDone = document.getElementById("listDone");
+const cntTodo = document.getElementById("cntTodo");
+const cntDoing = document.getElementById("cntDoing");
+const cntDone = document.getElementById("cntDone");
+
+const backdrop = document.getElementById("backdrop");
+const cancelBtn = document.getElementById("cancelBtn");
+const saveBtn = document.getElementById("saveBtn");
+const tTitle = document.getElementById("tTitle");
+const tAssignee = document.getElementById("tAssignee");
+const tDue = document.getElementById("tDue");
+const tPriority = document.getElementById("tPriority");
+const tDesc = document.getElementById("tDesc");
+const tLink = document.getElementById("tLink");
+const tStatus = document.getElementById("tStatus");
+
+/** ===== Login ===== */
+async function ensureLogin(){
+  if(!currentUserEmail){
+    currentUserEmail = prompt("请输入你的 cloverth.net 邮箱：").trim().toLowerCase();
+    if(currentUserEmail) localStorage.setItem("jm_user_email", currentUserEmail);
+  }
+  if(!currentUserEmail.endsWith("@cloverth.net")){
+    alert("只允许 cloverth.net 邮箱登录");
     currentUserEmail = "";
+    localStorage.removeItem("jm_user_email");
+    return ensureLogin();
   }
 
-  await loadTasks();
-  setInterval(loadTasks, 30000);
+  const ping = await jsonp("ping",{ userEmail: currentUserEmail });
+  isAdmin = !!ping.admin;
+  userBadge.textContent = currentUserEmail + (isAdmin?" (admin)":"");
+  showAllToggle.disabled = !isAdmin;
 }
 
-/** ================== TASKS ================== **/
+/** ===== Load data ===== */
+async function loadDirectory(){
+  directory = await jsonp("listDirectory",{ userEmail: currentUserEmail });
+  tAssignee.innerHTML = directory.map(d=>`<option value="${d.email}">${d.name||d.email}</option>`).join("");
+}
 async function loadTasks(){
-  const res = await jsonp("listTasks",{loginEmail:currentUserEmail});
-  if(!res.ok){ alert("Load tasks error: "+res.error); return; }
-  tasks = res.tasks || [];
-  render();
+  tasks = await jsonp("listTasks",{ userEmail: currentUserEmail, showAll: showAll });
 }
 
-async function createTask(payload){
-  const res = await jsonp("createTask", payload);
-  if(!res.ok){ alert("Create error: "+res.error); return; }
-  await loadTasks();
-}
-
-async function updateStatus(id, status){
-  const res = await jsonp("updateTaskStatus",{id,status,loginEmail:currentUserEmail});
-  if(!res.ok){ alert("Update status error: "+res.error); return; }
-  await loadTasks();
+/** ===== Render ===== */
+function prBadge(p){
+  if(p==="Urgent") return `<span class="badge urgent">Urgent</span>`;
+  if(p==="Priority") return `<span class="badge priority">Priority</span>`;
+  return `<span class="badge plan">Plan</span>`;
 }
 
 function render(){
-  const byStatus = {"To Do":[], "Doing":[], "Done":[]};
+  const byStatus = { "To Do":[], "Doing":[], "Done":[], "Pending":[] };
   tasks.forEach(t=>{
-    const s = t.status || "To Do";
-    if(!byStatus[s]) byStatus[s]=[];
-    byStatus[s].push(t);
+    if(!byStatus[t.status]) byStatus[t.status]=[];
+    byStatus[t.status].push(t);
   });
 
-  // Priority 排序：Priority 置顶
-  for(const s in byStatus){
-    byStatus[s].sort((a,b)=>{
-      const pa = (a.priority==="Priority")?0:1;
-      const pb = (b.priority==="Priority")?0:1;
-      if(pa!==pb) return pa-pb;
-      return new Date(b.createdAt)-new Date(a.createdAt);
-    });
+  function fill(listEl, arr){
+    listEl.innerHTML = "";
+    if(arr.length===0){
+      listEl.innerHTML = `<div class="empty">No tasks</div>`;
+      return;
+    }
+    for(const t of arr){
+      const pending = t.status==="Pending";
+      const canApprove = (isAdmin || t.createdBy===currentUserEmail) && pending;
+
+      const card = document.createElement("div");
+      card.className="card";
+      card.draggable = !pending; // pending tasks cannot be dragged
+      card.dataset.id = t.id;
+      card.dataset.status = t.status;
+
+      card.innerHTML = `
+        <div class="title">${t.title||"(no title)"} ${prBadge(t.priority)}</div>
+        <div class="meta">
+          <span>@${t.assigneeName||t.assigneeEmail}</span>
+          <span>Due: ${t.dueDate||"-"}</span>
+          ${pending?`<span class="badge pending">Waiting approval</span>`:""}
+        </div>
+        ${t.description?`<div style="font-size:13px;color:#c8cfe4">${t.description}</div>`:""}
+        ${t.link?`<a class="link" href="${t.link}" target="_blank">Attachment link</a>`:""}
+        ${canApprove?`
+          <div class="actions">
+            <button class="primary" data-act="approve">Approve</button>
+            <button data-act="reject">Return to Doing</button>
+          </div>`:""}
+      `;
+
+      // approve/reject handlers
+      if(canApprove){
+        card.querySelector('[data-act="approve"]').onclick = async ()=>{
+          await jsonp("approveTask",{ userEmail: currentUserEmail, id:t.id });
+          await refresh();
+        };
+        card.querySelector('[data-act="reject"]').onclick = async ()=>{
+          await jsonp("rejectTask",{ userEmail: currentUserEmail, id:t.id });
+          await refresh();
+        };
+      }
+
+      // drag handlers
+      card.addEventListener("dragstart", (ev)=>{
+        card.classList.add("dragging");
+        ev.dataTransfer.setData("text/plain", t.id);
+      });
+      card.addEventListener("dragend", ()=>{
+        card.classList.remove("dragging");
+      });
+
+      listEl.appendChild(card);
+    }
   }
 
-  renderZone("todoZone", byStatus["To Do"]);
-  renderZone("doingZone", byStatus["Doing"]);
-  renderZone("doneZone", byStatus["Done"]);
+  fill(listTodo, byStatus["To Do"]);
+  fill(listDoing, byStatus["Doing"]);
+  // Done column shows both Done and Pending
+  fill(listDone, [...byStatus["Pending"], ...byStatus["Done"]]);
 
-  document.getElementById("countTodo").textContent = byStatus["To Do"].length;
-  document.getElementById("countDoing").textContent = byStatus["Doing"].length;
-  document.getElementById("countDone").textContent = byStatus["Done"].length;
+  cntTodo.textContent = byStatus["To Do"].length;
+  cntDoing.textContent = byStatus["Doing"].length;
+  cntDone.textContent = byStatus["Done"].length + byStatus["Pending"].length;
 }
 
-function renderZone(zoneId, list){
-  const zone = document.getElementById(zoneId);
-  zone.innerHTML = "";
-  if(!list.length){
-    const empty = document.createElement("div");
-    empty.className="hint";
-    empty.textContent="No tasks";
-    zone.appendChild(empty);
-    return;
-  }
-
-  list.forEach(t=>{
-    const card = document.createElement("div");
-    card.className="card";
-    card.draggable=true;
-    card.dataset.id=t.id;
-
-    const priClass = (t.priority==="Priority")?"priority":"planned";
-    const priText = t.priority || "Planned";
-
-    card.innerHTML = `
-      <div class="title">${escapeHtml(t.title||"(untitled)")}</div>
-      <div class="meta">
-        <span class="badge ${priClass}">${priText}</span>
-        ${t.assigneeName?`<span class="badge">@${escapeHtml(t.assigneeName)}</span>`:""}
-        ${t.dueDate?`<span class="badge">Due: ${escapeHtml(t.dueDate)}</span>`:""}
-      </div>
-      ${t.description?`<div class="hint">${escapeHtml(t.description)}</div>`:""}
-      ${t.link?`<a class="linkbtn" href="${t.link}" target="_blank">📎 Open File</a>`:""}
-    `;
-
-    card.addEventListener("dragstart", onDragStart);
-    zone.appendChild(card);
-  });
-}
-
-/** ================== DND ================== **/
-let dragId=null;
-
-function onDragStart(ev){
-  dragId = ev.currentTarget.dataset.id;
-  ev.dataTransfer.setData("text/plain", dragId);
-}
-
-document.querySelectorAll(".dropzone").forEach(zone=>{
-  zone.addEventListener("dragover",(e)=>{
+/** ===== Drag drop for columns ===== */
+document.querySelectorAll(".col").forEach(col=>{
+  col.addEventListener("dragover",(e)=>{ e.preventDefault(); });
+  col.addEventListener("drop", async (e)=>{
     e.preventDefault();
-    zone.classList.add("dragover");
-  });
-  zone.addEventListener("dragleave",()=>zone.classList.remove("dragover"));
-  zone.addEventListener("drop", async (e)=>{
-    e.preventDefault();
-    zone.classList.remove("dragover");
-    const id = e.dataTransfer.getData("text/plain") || dragId;
+    const id = e.dataTransfer.getData("text/plain");
+    const status = col.dataset.status; // To Do/Doing/Done
     if(!id) return;
-    const col = zone.closest(".col");
-    const newStatus = col.dataset.status;
-    await updateStatus(id, newStatus);
+    await jsonp("updateStatus",{ userEmail: currentUserEmail, id, status });
+    await refresh();
   });
 });
 
-/** ================== MODAL ================== **/
-const backdrop = document.getElementById("backdrop");
-document.getElementById("btnAdd").onclick=()=>openModal();
-document.getElementById("btnClose").onclick=closeModal;
-document.getElementById("btnCancel").onclick=closeModal;
-document.getElementById("btnRefresh").onclick=loadTasks;
-
+/** ===== Create task flow ===== */
 function openModal(){
+  tTitle.value = "";
+  tDesc.value = "";
+  tDue.value = "";
+  tPriority.value = "Plan";
+  tLink.value = "";
+  tStatus.value = "To Do";
   backdrop.style.display="flex";
-  // reset
-  ["taskTitle","taskAssigneeName","taskAssigneeEmail","taskDesc","taskLink"].forEach(id=>{
-    document.getElementById(id).value="";
-  });
-  document.getElementById("taskPriority").value="Planned";
-  document.getElementById("taskStatus").value="To Do";
-  document.getElementById("taskDueDate").value="";
 }
 function closeModal(){ backdrop.style.display="none"; }
 
-document.getElementById("btnSave").onclick=async ()=>{
-  const title = document.getElementById("taskTitle").value.trim();
-  const assigneeName = document.getElementById("taskAssigneeName").value.trim();
-  const assigneeEmail = document.getElementById("taskAssigneeEmail").value.trim().toLowerCase();
-  const dueDate = document.getElementById("taskDueDate").value;
-  const status = document.getElementById("taskStatus").value;
-  const priority = document.getElementById("taskPriority").value;
-  const description = document.getElementById("taskDesc").value.trim();
-  const link = document.getElementById("taskLink").value.trim();
-
-  if(!title){ alert("Title required"); return; }
-  if(assigneeEmail && !assigneeEmail.endsWith("@"+COMPANY_DOMAIN)){
-    alert("Assignee 必须是 @cloverth.net 邮箱");
+saveBtn.onclick = async ()=>{
+  const email = tAssignee.value;
+  const assigneeObj = directory.find(d=>d.email===email) || {name:"",email};
+  const payload = {
+    title: tTitle.value.trim(),
+    description: tDesc.value.trim(),
+    assigneeName: assigneeObj.name || email.split("@")[0],
+    assigneeEmail: email,
+    status: tStatus.value,
+    priority: tPriority.value,
+    dueDate: tDue.value,
+    link: tLink.value.trim()
+  };
+  if(!payload.title){
+    alert("Title required");
     return;
   }
-
-  await createTask({
-    title,assigneeName,assigneeEmail,dueDate,status,priority,description,link,
-    loginEmail: currentUserEmail
-  });
+  await jsonp("createTask",{ userEmail: currentUserEmail, payload: JSON.stringify(payload) });
   closeModal();
+  await refresh();
 };
 
-/** ================== UTILS ================== **/
-function escapeHtml(s){
-  return String(s||"").replace(/[&<>"']/g,m=>({
-    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-  }[m]));
+cancelBtn.onclick = closeModal;
+addBtn.onclick = openModal;
+refreshBtn.onclick = refresh;
+
+showAllToggle.onchange = async ()=>{
+  showAll = showAllToggle.checked;
+  await refresh();
+};
+
+/** ===== Refresh ===== */
+async function refresh(){
+  try{
+    await loadTasks();
+    render();
+  }catch(err){
+    console.error(err);
+    alert("Load tasks error: " + err.message);
+  }
 }
 
-init();
+/** ===== Init ===== */
+(async function init(){
+  await ensureLogin();
+  await loadDirectory();
+  await refresh();
+  setInterval(refresh, 30000);
+})();
 </script>
 </body>
 </html>
