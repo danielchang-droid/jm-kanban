@@ -44,17 +44,14 @@ header{
   box-shadow:0 0 18px var(--accent);
 }
 .brand-sub{
-  font-weight:500;font-size:12px;color:#98a0b6;margin-left:6px;
-  background:none;-webkit-text-fill-color:#98a0b6;color:#98a0b6;
+  font-weight:500;font-size:12px;color:#98a0b6;
+  background:none;-webkit-background-clip:unset;color:#98a0b6;
 }
-.rightbar{
-  display:flex;align-items:center;gap:10px;
-}
+.rightbar{ display:flex;align-items:center;gap:10px; }
 .pill{
   background:var(--panel);
   border:1px solid var(--line);
   padding:6px 10px;border-radius:999px;font-size:12px;color:var(--muted);
-  max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
 button{
   background:var(--panel-2);
@@ -162,7 +159,6 @@ select{
 .comment .cmeta{ font-size:11px;color:var(--muted); }
 .comment-box{ display:flex;gap:6px;margin-top:6px; }
 .comment-box input{ flex:1; }
-
 @media (max-width: 960px){
   main{ grid-template-columns:1fr; }
   .grid{ grid-template-columns:1fr; }
