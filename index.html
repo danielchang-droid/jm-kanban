@@ -2,436 +2,639 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>JM Kanban — Team</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>JM Kanban – Team</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
   <style>
     :root{
       --bg:#0b0c10;
       --panel:#11131a;
-      --panel-2:#151824;
+      --panel2:#151824;
       --text:#e8ebf5;
       --muted:#9aa3b2;
+      --line:#222638;
+      --urgent:#ff6b6b;
+      --planned:#4ea1ff;
+      --normal:#c1c7d0;
+      --doing:#f7c948;
+      --done:#57e0a3;
+      --approved:#d6b36a;
       --accent:#7c5cff;
-      --accent-2:#3ddc97;
-      --danger:#ff7a7a;
-      --warning:#ffb454;
-      --ok:#7ee787;
-
-      --radius:16px;
+      --accent2:#a78bfa;
     }
     *{box-sizing:border-box}
     body{
-      margin:0;
-      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-      color:var(--text);
-      height:100vh;
-      background:
+      margin:0;font-family:Inter,system-ui;background:
         radial-gradient(1200px 800px at 10% -10%, #1c1f2b 0%, transparent 60%),
         radial-gradient(1000px 700px at 110% 0%, #151a2d 0%, transparent 60%),
         var(--bg);
-      display:flex;
-      flex-direction:column;
+      color:var(--text);height:100vh;display:flex;flex-direction:column;
     }
-
     header{
-      height:64px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      padding:0 16px;
-      border-bottom:1px solid #1c2030;
-      background:rgba(5,6,10,.6);
-      backdrop-filter: blur(8px);
+      display:flex;align-items:center;justify-content:space-between;
+      padding:14px 18px;border-bottom:1px solid var(--line);
+      background:rgba(9,10,14,.7);backdrop-filter:blur(8px);
+      position:sticky;top:0;z-index:10;
     }
-    .brand{
-      display:flex;gap:10px;align-items:center;font-weight:700;
-    }
-    .dot{width:9px;height:9px;border-radius:50%;background:var(--accent)}
-    .sub{font-weight:500;color:var(--muted);font-size:13px}
-
-    .right{
-      display:flex;gap:8px;align-items:center;
-    }
+    .brand{display:flex;gap:10px;align-items:center;font-weight:700}
+    .dot{width:8px;height:8px;border-radius:999px;background:var(--accent)}
+    .toolbar{display:flex;gap:8px;align-items:center}
     button{
-      appearance:none;border:0;outline:0;cursor:pointer;
-      background:var(--panel-2);color:var(--text);
-      padding:8px 12px;border-radius:10px;
-      font-weight:600;font-size:14px;
-      border:1px solid #202538;
+      background:var(--panel2);border:1px solid var(--line);
+      color:var(--text);padding:8px 12px;border-radius:10px;cursor:pointer;
+      font-weight:600;
     }
-    button.primary{background:var(--accent);border-color:transparent;}
+    button.primary{background:linear-gradient(180deg,var(--accent),#5b3fff);border:none;}
     button.ghost{background:transparent;}
-    button:disabled{opacity:.5;cursor:not-allowed}
+    button:disabled{opacity:.5;cursor:not-allowed;}
 
-    .layout{
-      flex:1;display:grid;grid-template-columns:repeat(3,1fr);
-      gap:12px;padding:12px;min-height:0;
-    }
+    main{flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:12px;}
+
     .col{
-      background:rgba(17,19,26,.9);
-      border:1px dashed #242a3f;
-      border-radius:var(--radius);
-      display:flex;flex-direction:column;min-height:0;
+      background:rgba(17,19,26,.7);
+      border:1px dashed #2a2f45;border-radius:14px;display:flex;flex-direction:column;
+      min-height:0;
     }
-    .col h3{
-      margin:0;padding:10px 12px;font-size:14px;color:var(--muted);
-      display:flex;justify-content:space-between;align-items:center;
-      border-bottom:1px solid #1f2435;
+    .col-header{
+      padding:12px;border-bottom:1px solid var(--line);
+      display:flex;align-items:center;justify-content:space-between;
+      font-weight:700;color:#cfd6e6;
     }
-    .col .count{font-size:12px;background:#1c2030;padding:2px 8px;border-radius:999px;color:var(--text)}
-    .list{
-      padding:8px;display:flex;flex-direction:column;gap:8px;
-      overflow:auto;min-height:0;
-    }
+    .count{background:#1f2333;border:1px solid var(--line);padding:3px 8px;border-radius:999px;font-size:12px;}
+    .list{padding:10px;overflow:auto;min-height:120px;flex:1;}
 
     .card{
-      background:var(--panel-2);
-      border:1px solid #23283b;border-radius:14px;
-      padding:10px;display:flex;flex-direction:column;gap:6px;
-      cursor:grab;
+      background:linear-gradient(180deg,#121625,#0f1220);
+      border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px;
+      box-shadow:0 6px 18px rgba(0,0,0,.25);
     }
-    .title{font-weight:700;font-size:15px}
-    .desc{color:var(--muted);font-size:13px;white-space:pre-wrap}
-    .meta{display:flex;gap:6px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
-    .pill{
-      background:#1c2030;border:1px solid #2a314a;
-      padding:2px 7px;border-radius:999px;color:var(--text);
-      display:inline-flex;align-items:center;gap:4px;
-    }
-    .pill.priority-Urgent{border-color:var(--danger);color:#ffd7d7}
-    .pill.priority-Planned{border-color:var(--warning);color:#ffe4b8}
+    .card.dragging{opacity:.6;transform:scale(.98);}
+    .title{font-weight:700;font-size:16px;margin-bottom:4px;}
+    .desc{color:var(--muted);font-size:13px;white-space:pre-wrap;margin-bottom:8px;}
 
-    .actions{display:flex;gap:6px;margin-top:4px}
-    .tiny{font-size:12px;padding:6px 8px;border-radius:8px}
+    .chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;}
+    .chip{
+      font-size:12px;padding:4px 8px;border-radius:999px;border:1px solid var(--line);
+      background:#14192a;color:#cfd6e6;font-weight:600;
+    }
+    .chip.urgent{border-color:var(--urgent);color:var(--urgent);}
+    .chip.planned{border-color:var(--planned);color:var(--planned);}
+    .chip.normal{border-color:var(--normal);color:var(--normal);}
+    .chip.doing{border-color:var(--doing);color:var(--doing);}
+    .chip.done{border-color:var(--done);color:var(--done);}
+    .chip.approved{border-color:var(--approved);color:var(--approved);}
+
+    .links{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;}
+    .linkbtn{
+      font-size:12px;padding:5px 8px;border-radius:8px;border:1px solid var(--line);
+      background:#0f1322;color:#cfd6e6;text-decoration:none;font-weight:600;
+    }
+
+    .actions{display:flex;gap:6px;align-items:center;justify-content:space-between;}
+    select{
+      background:#0f1322;color:#fff;border:1px solid var(--line);
+      padding:6px 8px;border-radius:8px;
+    }
+    .small{font-size:12px;color:var(--muted);}
 
     /* modal */
-    .modal-backdrop{
-      position:fixed;inset:0;background:rgba(0,0,0,.5);
-      display:none;align-items:center;justify-content:center;z-index:10;
+    .backdrop{
+      position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:20;
     }
     .modal{
-      width:min(720px,92vw);
-      background:var(--panel);
-      border:1px solid #23283b;border-radius:18px;
-      padding:14px;
-      box-shadow:0 10px 40px rgba(0,0,0,.6);
+      width:min(820px,96vw);background:#0e111d;border:1px solid var(--line);
+      border-radius:16px;padding:14px;box-shadow:0 20px 60px rgba(0,0,0,.6);
+      max-height:90vh;overflow:auto;
     }
-    .modal h2{margin:0 0 8px 0;font-size:18px}
-    .grid{
-      display:grid;grid-template-columns:1fr 1fr;gap:10px;
+    .modal h3{margin:6px 0 12px;}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+    .field{display:flex;flex-direction:column;gap:6px;margin-bottom:8px;}
+    input,textarea{
+      background:#0f1322;color:#fff;border:1px solid var(--line);
+      padding:8px 10px;border-radius:10px;font-size:14px;outline:none;
     }
-    label{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:4px}
-    input,textarea,select{
-      background:var(--panel-2);color:var(--text);
-      border:1px solid #23283b;border-radius:10px;
-      padding:8px;font-size:14px;outline:none;
+    textarea{min-height:90px;resize:vertical;}
+    .row{display:flex;gap:8px;align-items:center}
+
+    .comments{
+      margin-top:12px;border-top:1px solid var(--line);padding-top:10px;
     }
-    textarea{min-height:70px;resize:vertical}
-    .modal .footer{display:flex;justify-content:flex-end;gap:8px;margin-top:10px}
-    .hint{font-size:12px;color:var(--muted)}
+    .comment{
+      background:#0f1322;border:1px solid var(--line);border-radius:10px;padding:8px;margin-bottom:6px;
+      font-size:13px;
+    }
+    .comment .meta{color:var(--muted);font-size:12px;margin-bottom:4px;}
+
+    .loading{
+      position:fixed;inset:0;background:rgba(5,6,10,.7);display:none;align-items:center;justify-content:center;z-index:99;
+      font-weight:700;color:#fff;
+    }
   </style>
 </head>
+
 <body>
 <header>
   <div class="brand">
-    <span class="dot"></span>
-    <div>
-      JM Kanban
-      <div class="sub">Team board</div>
-    </div>
+    <div class="dot"></div>
+    <div>JM Kanban</div>
+    <div class="small">Team board</div>
   </div>
-  <div class="right">
-    <div id="userLabel" class="sub"></div>
+  <div class="toolbar">
+    <div id="userBadge" class="small">—</div>
     <button id="refreshBtn">Refresh</button>
     <button id="addBtn" class="primary">+ Add task</button>
   </div>
 </header>
 
-<main class="layout">
+<main>
   <section class="col" data-status="To Do">
-    <h3>To Do <span class="count" id="countTodo">0</span></h3>
+    <div class="col-header"><span>To Do</span><span class="count" id="countTodo">0</span></div>
     <div class="list" id="listTodo"></div>
   </section>
   <section class="col" data-status="Doing">
-    <h3>Doing <span class="count" id="countDoing">0</span></h3>
+    <div class="col-header"><span>Doing</span><span class="count" id="countDoing">0</span></div>
     <div class="list" id="listDoing"></div>
   </section>
   <section class="col" data-status="Done">
-    <h3>Done <span class="count" id="countDone">0</span></h3>
+    <div class="col-header"><span>Done</span><span class="count" id="countDone">0</span></div>
     <div class="list" id="listDone"></div>
   </section>
 </main>
 
-<!-- modal -->
-<div class="modal-backdrop" id="backdrop">
-  <div class="modal">
-    <h2>Create task</h2>
-    <div class="grid">
-      <label>Title
-        <input id="fTitle" placeholder="e.g. Follow up client A2-..." />
-      </label>
-
-      <label>Assignee email (@cloverth.net)
-        <input id="fAssigneeEmail" placeholder="lita@cloverth.net" />
-      </label>
-
-      <label>Assignee name
-        <input id="fAssigneeName" placeholder="Lita" />
-      </label>
-
-      <label>Due date
-        <input id="fDueDate" type="date" />
-      </label>
-
-      <label>Priority
-        <select id="fPriority">
-          <option>Normal</option>
-          <option>Planned</option>
-          <option>Urgent</option>
-        </select>
-      </label>
-
-      <label>Status
-        <select id="fStatus">
-          <option>To Do</option>
-          <option>Doing</option>
-          <option>Done</option>
-        </select>
-        <div class="hint">Done will ask creator to approve</div>
-      </label>
-
-      <label style="grid-column:1/-1">Google Link (optional)
-        <input id="fGoogleLink" placeholder="https://docs.google.com/..." />
-      </label>
-
-      <label style="grid-column:1/-1">Description
-        <textarea id="fDesc" placeholder="Details..."></textarea>
-      </label>
-    </div>
-    <div class="footer">
-      <button id="cancelBtn" class="ghost">Cancel</button>
-      <button id="saveBtn" class="primary">Save</button>
-    </div>
-  </div>
+<div class="backdrop" id="backdrop">
+  <div class="modal" id="modal"></div>
 </div>
 
-<script>
-/************
- * CONFIG
- ************/
-const API_BASE = "https://script.google.com/macros/s/AKfycbw5DMgrN-uG_FzPyn83P8SIg9E37BLipNTwnC5mEy2RyS_CIPTj_3XiOE-y5TahZDKP/exec"; // <-- 你的后端 exec
-const DOMAIN = "@cloverth.net";
+<div class="loading" id="loading">Loading…</div>
 
-/************
- * JSONP helper
- ************/
-function jsonp(url, params={}){
-  return new Promise((resolve,reject)=>{
-    const cb = "cb_"+Math.random().toString(36).slice(2);
-    params.callback = cb;
-    const qs = new URLSearchParams(params).toString();
-    const script = document.createElement("script");
-    script.src = url + (url.includes("?")?"&":"?") + qs;
-    script.onerror = ()=>{ delete window[cb]; script.remove(); reject(new Error("JSONP load error")); };
-    window[cb] = (res)=>{
-      delete window[cb];
+<script>
+/************ CONFIG ************/
+const API_BASE = "https://script.google.com/macros/s/AKfycbw5DMgrN-uG_FzPyn83P8SIg9E37BLipNTwnC5mEy2RyS_CIPTj_3XiOE-y5TahZDKP/exec";
+/********************************/
+
+let currentUserEmail = "";
+let currentUserName = "";
+let isAdmin = false;
+let directory = [];
+let tasks = [];
+let commentsCache = {}; // taskId -> comments array
+
+const PRIORITY_RANK = {Urgent:1, Planned:2, Normal:3};
+
+// ---------- JSONP helper ----------
+function jsonp(action, params={}){
+  return new Promise((resolve, reject)=>{
+    const cbName = "cb_"+Math.random().toString(36).slice(2);
+    window[cbName] = (res)=>{
+      delete window[cbName];
       script.remove();
       resolve(res);
     };
+    const q = new URLSearchParams({action, callback: cbName, ...params});
+    const script = document.createElement("script");
+    script.src = API_BASE + "?" + q.toString();
+    script.onerror = ()=>{ delete window[cbName]; script.remove(); reject(new Error("JSONP load error")); };
     document.body.appendChild(script);
   });
 }
 
-/************
- * State
- ************/
-let currentUserEmail = "";
-let isAdmin = false;
-let tasks = [];
+const $ = (id)=>document.getElementById(id);
+function showLoading(v){ $("loading").style.display = v ? "flex" : "none"; }
 
-/************
- * Login
- ************/
+// ---------- Login ----------
 async function login(){
-  currentUserEmail = localStorage.getItem("jm_user_email") || "";
-  if(!currentUserEmail){
-    currentUserEmail = prompt("Please enter your company email:")?.trim().toLowerCase() || "";
-    if(currentUserEmail) localStorage.setItem("jm_user_email", currentUserEmail);
+  showLoading(true);
+  const dirRes = await jsonp("listDirectory");
+  directory = dirRes.data || [];
+
+  let email = (localStorage.getItem("jm_user_email")||"").trim().toLowerCase();
+  while(!email){
+    email = prompt("Please enter your company email (xxx@cloverth.net):")?.trim().toLowerCase() || "";
   }
-  if(!currentUserEmail) throw new Error("No email");
 
-  const res = await jsonp(API_BASE, { action:"login", email: currentUserEmail });
-  if(!res.ok) throw new Error(res.error || "Login failed");
-  isAdmin = !!res.data.isAdmin;
-  document.getElementById("userLabel").textContent = currentUserEmail + (isAdmin?" (admin)":"");
+  const me = directory.find(d => (d.email||"").toLowerCase().trim() === email);
+  if(!me){
+    alert("Your email is not in Directory. Please contact admin.");
+    localStorage.removeItem("jm_user_email");
+    showLoading(false);
+    return login();
+  }
+
+  currentUserEmail = email;
+  currentUserName = me.name || email.split("@")[0];
+  isAdmin = String(me.isAdmin||me.admin||"").toLowerCase()==="true";
+
+  localStorage.setItem("jm_user_email", email);
+
+  $("userBadge").textContent = isAdmin
+    ? `${currentUserEmail} (admin)`
+    : currentUserEmail;
+
+  showLoading(false);
 }
 
-/************
- * Load tasks
- ************/
-function priorityRank(p){
-  return p==="Urgent"?0 : p==="Planned"?1 : 2;
-}
+// ---------- Load tasks ----------
 async function loadTasks(){
-  const res = await jsonp(API_BASE, { action:"listTasks", email: currentUserEmail });
-  if(!res.ok) throw new Error(res.error || "Load failed");
+  const res = await jsonp("listTasks", { actorEmail: currentUserEmail });
   tasks = res.data || [];
-
-  // sort: priority -> dueDate -> createdAt
-  tasks.sort((a,b)=>{
-    const pr = priorityRank(a.priority) - priorityRank(b.priority);
-    if(pr!==0) return pr;
-    const da = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
-    const db = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
-    if(da!==db) return da-db;
-    return new Date(a.createdAt||0)-new Date(b.createdAt||0);
-  });
-
-  render();
+  // filter visibility
+  if(!isAdmin){
+    tasks = tasks.filter(t=>{
+      const a = (t.assigneeEmail||"").toLowerCase().trim();
+      const c = (t.createdBy||"").toLowerCase().trim();
+      return a === currentUserEmail || c === currentUserEmail; 
+    });
+  }
 }
 
-/************
- * Render
- ************/
+function priorityChipClass(p){
+  p = p||"Normal";
+  if(p==="Urgent") return "urgent";
+  if(p==="Planned") return "planned";
+  return "normal";
+}
+
+function statusChipClass(s){
+  if(s==="Doing") return "doing";
+  if(s==="Done") return "done";
+  if(s==="Approved") return "approved";
+  return "";
+}
+
+// sorting: Urgent > Planned > Normal then dueDate
+function sortTasks(list){
+  return list.slice().sort((a,b)=>{
+    const pa = PRIORITY_RANK[a.priority||"Normal"] || 3;
+    const pb = PRIORITY_RANK[b.priority||"Normal"] || 3;
+    if(pa !== pb) return pa - pb;
+    const da = a.dueDate ? new Date(a.dueDate).getTime() : 9e15;
+    const db = b.dueDate ? new Date(b.dueDate).getTime() : 9e15;
+    if(da !== db) return da - db;
+    return (a.createdAt||"").localeCompare(b.createdAt||"");
+  });
+}
+
+// ---------- Render ----------
 function render(){
-  const map = {
-    "To Do": document.getElementById("listTodo"),
-    "Doing": document.getElementById("listDoing"),
-    "Done": document.getElementById("listDone"),
-    "Approved": document.getElementById("listDone"),
-  };
-  Object.values(map).forEach(el=> el.innerHTML="");
+  const todo = sortTasks(tasks.filter(t=>t.status==="To Do"));
+  const doing = sortTasks(tasks.filter(t=>t.status==="Doing"));
+  const done = sortTasks(tasks.filter(t=>t.status==="Done" || t.status==="Approved"));
 
-  let cTodo=0,cDoing=0,cDone=0;
+  $("countTodo").textContent = todo.length;
+  $("countDoing").textContent = doing.length;
+  $("countDone").textContent = done.length;
 
-  tasks.forEach(t=>{
-    const status = t.status || "To Do";
-    const list = map[status] || map["To Do"];
-    const card = document.createElement("div");
-    card.className="card";
-    card.draggable=true;
-    card.dataset.id=t.id;
+  $("listTodo").innerHTML = todo.map(cardHtml).join("");
+  $("listDoing").innerHTML = doing.map(cardHtml).join("");
+  $("listDone").innerHTML = done.map(cardHtml).join("");
 
-    const due = t.dueDate ? new Date(t.dueDate).toISOString().slice(0,10) : "";
-    const linkBlock = t.googleLink ? `<div class="meta"><a href="${t.googleLink}" target="_blank">📎 Open Link</a></div>` : "";
+  bindCardEvents();
+  bindDnD();
+}
 
-    card.innerHTML=`
-      <div class="title">${escapeHtml(t.title||"")}</div>
-      <div class="desc">${escapeHtml(t.description||"")}</div>
-      ${linkBlock}
-      <div class="meta">
-        <span class="pill">@${escapeHtml(t.assigneeName||t.assigneeEmail||"")}</span>
-        ${t.priority?`<span class="pill priority-${escapeHtml(t.priority)}">${escapeHtml(t.priority)}</span>`:""}
-        ${due?`<span class="pill">Due: ${due}</span>`:""}
-        ${t.createdBy?`<span class="pill">By: ${escapeHtml(t.createdBy)}</span>`:""}
-      </div>
-      <div class="actions">
-        <select class="tiny statusSel">
-          <option ${status==="To Do"?"selected":""}>To Do</option>
-          <option ${status==="Doing"?"selected":""}>Doing</option>
-          <option ${status==="Done"?"selected":""}>Done</option>
-          <option ${status==="Approved"?"selected":""}>Approved</option>
+function cardHtml(t){
+  const canReview = (t.status==="Done" && (isAdmin || (t.createdBy||"").toLowerCase()===currentUserEmail));
+  const canMove = (isAdmin || (t.assigneeEmail||"").toLowerCase()===currentUserEmail || (t.createdBy||"").toLowerCase()===currentUserEmail);
+
+  const links = [t.link1,t.link2,t.link3].filter(Boolean).map((l,i)=>`<a class="linkbtn" href="${l}" target="_blank">Link ${i+1}</a>`).join("");
+
+  const descShort = (t.description||"").length>120 ? (t.description||"").slice(0,120)+"…" : (t.description||"");
+
+  return `
+  <div class="card" draggable="true" data-id="${t.id}">
+    <div class="title">${escapeHtml(t.title||"")}</div>
+    <div class="desc">${escapeHtml(descShort)}</div>
+
+    <div class="chips">
+      <span class="chip">${"@"+(t.assigneeName||t.assigneeEmail||"")}</span>
+      <span class="chip ${priorityChipClass(t.priority)}">${t.priority||"Normal"}</span>
+      ${t.dueDate? `<span class="chip">Due: ${escapeHtml(t.dueDate)}</span>`:""}
+      ${t.createdBy? `<span class="chip">By: ${escapeHtml(t.createdBy)}</span>`:""}
+      ${t.returnReason? `<span class="chip urgent">Returned: ${escapeHtml(t.returnReason)}</span>`:""}
+      ${t.approvedBy? `<span class="chip approved">Approved</span>`:""}
+    </div>
+
+    ${links? `<div class="links">${links}</div>`:""}
+
+    <div class="actions">
+      <div class="row">
+        <select class="statusSel" data-id="${t.id}" ${canMove?"":"disabled"}>
+          ${["To Do","Doing","Done","Approved"].map(s=>`<option value="${s}" ${t.status===s?"selected":""}>${s}</option>`).join("")}
         </select>
-        ${isAdmin || currentUserEmail===t.createdBy ? `<button class="tiny editBtn">Edit</button>`:""}
+        <button class="editBtn" data-id="${t.id}">Edit</button>
       </div>
-    `;
+      <div class="row">
+        ${canReview? `<button class="approveBtn" data-id="${t.id}">Approved</button>
+                      <button class="returnBtn" data-id="${t.id}">Return</button>`:""}
+        <button class="detailBtn ghost" data-id="${t.id}">Detail</button>
+      </div>
+    </div>
+  </div>
+  `;
+}
 
-    // status dropdown
-    card.querySelector(".statusSel").addEventListener("change", async (ev)=>{
-      const newStatus = ev.target.value;
-      await updateTask(t.id, { status:newStatus });
+function bindCardEvents(){
+  document.querySelectorAll(".editBtn").forEach(b=>b.onclick = ()=>openEdit(b.dataset.id));
+  document.querySelectorAll(".detailBtn").forEach(b=>b.onclick = ()=>openDetail(b.dataset.id));
+  document.querySelectorAll(".approveBtn").forEach(b=>b.onclick = ()=>approveTask(b.dataset.id));
+  document.querySelectorAll(".returnBtn").forEach(b=>b.onclick = ()=>returnTask(b.dataset.id));
+
+  document.querySelectorAll(".statusSel").forEach(sel=>{
+    sel.onchange = async ()=>{
+      const id = sel.dataset.id;
+      const status = sel.value;
+      await updateTask({id,status});
+      await reloadAll();
+    };
+  });
+}
+
+// ---------- Drag & Drop ----------
+function bindDnD(){
+  const cards = document.querySelectorAll(".card");
+  cards.forEach(card=>{
+    card.addEventListener("dragstart", e=>{
+      card.classList.add("dragging");
+      e.dataTransfer.setData("text/plain", card.dataset.id);
     });
-
-    // drag handlers
-    card.addEventListener("dragstart",(e)=>{
-      e.dataTransfer.setData("text/plain", t.id);
-    });
-
-    list.appendChild(card);
-
-    if(status==="To Do") cTodo++;
-    else if(status==="Doing") cDoing++;
-    else cDone++;
+    card.addEventListener("dragend", ()=>card.classList.remove("dragging"));
   });
 
-  document.getElementById("countTodo").textContent=cTodo;
-  document.getElementById("countDoing").textContent=cDoing;
-  document.getElementById("countDone").textContent=cDone;
-}
-
-function escapeHtml(s){
-  return String(s||"").replace(/[&<>"']/g,(c)=>({
-    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-  }[c]));
-}
-
-/************
- * Update task
- ************/
-async function updateTask(id, patch){
-  const res = await jsonp(API_BASE, { action:"updateTask", email:currentUserEmail, id, ...patch });
-  if(!res.ok){ alert(res.error||"Update failed"); return; }
-  await loadTasks();
-}
-
-/************
- * Add task modal
- ************/
-const backdrop = document.getElementById("backdrop");
-document.getElementById("addBtn").onclick=()=>{ backdrop.style.display="flex"; };
-document.getElementById("cancelBtn").onclick=()=>{ backdrop.style.display="none"; };
-
-document.getElementById("saveBtn").onclick=async ()=>{
-  const payload = {
-    action:"addTask",
-    email: currentUserEmail,
-    title: document.getElementById("fTitle").value.trim(),
-    description: document.getElementById("fDesc").value.trim(),
-    assigneeName: document.getElementById("fAssigneeName").value.trim(),
-    assigneeEmail: document.getElementById("fAssigneeEmail").value.trim().toLowerCase(),
-    status: document.getElementById("fStatus").value,
-    priority: document.getElementById("fPriority").value,
-    dueDate: document.getElementById("fDueDate").value,
-    googleLink: document.getElementById("fGoogleLink").value.trim()
-  };
-
-  if(!payload.title){ alert("Title required"); return; }
-  if(!payload.assigneeEmail.endsWith(DOMAIN)){ alert("Assignee must be @cloverth.net"); return; }
-
-  const res = await jsonp(API_BASE, payload);
-  if(!res.ok){ alert(res.error||"Add failed"); return; }
-
-  backdrop.style.display="none";
-  // reset
-  ["fTitle","fDesc","fAssigneeName","fAssigneeEmail","fDueDate","fGoogleLink"].forEach(id=>document.getElementById(id).value="");
-  document.getElementById("fPriority").value="Normal";
-  document.getElementById("fStatus").value="To Do";
-
-  await loadTasks();
-};
-
-/************
- * Column drop zones
- ************/
-document.querySelectorAll(".col").forEach(col=>{
-  col.addEventListener("dragover",(e)=> e.preventDefault());
-  col.addEventListener("drop", async (e)=>{
-    e.preventDefault();
-    const id = e.dataTransfer.getData("text/plain");
-    const newStatus = col.dataset.status;
-    await updateTask(id, { status:newStatus });
+  document.querySelectorAll(".col").forEach(col=>{
+    col.addEventListener("dragover", e=> e.preventDefault());
+    col.addEventListener("drop", async e=>{
+      e.preventDefault();
+      const id = e.dataTransfer.getData("text/plain");
+      const status = col.dataset.status;
+      await updateTask({id,status});
+      await reloadAll();
+    });
   });
+}
+
+// ---------- Modal ----------
+function openModal(html){
+  $("modal").innerHTML = html;
+  $("backdrop").style.display="flex";
+}
+function closeModal(){
+  $("backdrop").style.display="none";
+  $("modal").innerHTML="";
+}
+$("backdrop").addEventListener("click",(e)=>{
+  if(e.target.id==="backdrop") closeModal();
 });
 
-/************
- * Init
- ************/
+// Add / Edit
+function openAdd(){
+  openModal(taskFormHtml({}));
+  $("saveTaskBtn").onclick = saveNew;
+}
+function openEdit(id){
+  const t = tasks.find(x=>x.id===id);
+  openModal(taskFormHtml(t));
+  $("saveTaskBtn").onclick = ()=>saveEdit(id);
+}
+function taskFormHtml(t){
+  return `
+  <h3>${t?.id?"Edit task":"Create task"}</h3>
+  <div class="grid">
+    <div class="field">
+      <label>Title</label>
+      <input id="fTitle" value="${escapeAttr(t.title||"")}" />
+    </div>
+    <div class="field">
+      <label>Assignee (name)</label>
+      <input id="fAssigneeName" value="${escapeAttr(t.assigneeName||"")}" list="assigneeList" placeholder="e.g. Lita" />
+      <datalist id="assigneeList">
+        ${directory.map(d=>`<option value="${escapeAttr(d.name||"")}">`).join("")}
+      </datalist>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="field">
+      <label>Assignee (email)</label>
+      <input id="fAssigneeEmail" value="${escapeAttr(t.assigneeEmail||"")}" list="emailList" placeholder="xxx@cloverth.net"/>
+      <datalist id="emailList">
+        ${directory.map(d=>`<option value="${escapeAttr(d.email||"")}">`).join("")}
+      </datalist>
+    </div>
+    <div class="field">
+      <label>Priority</label>
+      <select id="fPriority">
+        ${["Urgent","Planned","Normal"].map(p=>`<option ${t.priority===p?"selected":""}>${p}</option>`).join("")}
+      </select>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="field">
+      <label>Due date (required)</label>
+      <input id="fDueDate" type="date" value="${escapeAttr((t.dueDate||"").slice(0,10))}" />
+    </div>
+    <div class="field">
+      <label>Status</label>
+      <select id="fStatus">
+        ${["To Do","Doing","Done","Approved"].map(s=>`<option ${t.status===s?"selected":""}>${s}</option>`).join("")}
+      </select>
+    </div>
+  </div>
+
+  <div class="field">
+    <label>Description (visible to assignee + creator)</label>
+    <textarea id="fDesc">${escapeHtml(t.description||"")}</textarea>
+  </div>
+
+  <div class="grid">
+    <div class="field"><label>Link 1</label><input id="fLink1" value="${escapeAttr(t.link1||"")}"/></div>
+    <div class="field"><label>Link 2</label><input id="fLink2" value="${escapeAttr(t.link2||"")}"/></div>
+  </div>
+  <div class="field"><label>Link 3</label><input id="fLink3" value="${escapeAttr(t.link3||"")}"/></div>
+
+  <div class="row" style="justify-content:flex-end;margin-top:8px;">
+    <button onclick="closeModal()">Cancel</button>
+    <button id="saveTaskBtn" class="primary">Save</button>
+  </div>`;
+}
+
+async function saveNew(){
+  const payload = readFormPayload();
+  if(!payload.title){ alert("Title required"); return; }
+  if(!payload.dueDate){ alert("Due date required"); return; }
+
+  // fill assignee email if only name provided
+  if(payload.assigneeName && !payload.assigneeEmail){
+    const u = directory.find(d=>(d.name||"").toLowerCase()===payload.assigneeName.toLowerCase());
+    if(u) payload.assigneeEmail = u.email||"";
+  }
+  if(payload.assigneeEmail && !payload.assigneeName){
+    const u = directory.find(d=>(d.email||"").toLowerCase()===payload.assigneeEmail.toLowerCase());
+    if(u) payload.assigneeName = u.name||"";
+  }
+
+  showLoading(true);
+  await jsonp("createTask", { actorEmail: currentUserEmail, payload: JSON.stringify(payload) });
+  showLoading(false);
+  closeModal();
+  await reloadAll();
+}
+
+async function saveEdit(id){
+  const payload = readFormPayload();
+  payload.id = id;
+  if(!payload.title){ alert("Title required"); return; }
+  if(!payload.dueDate){ alert("Due date required"); return; }
+
+  showLoading(true);
+  await jsonp("updateTask", { actorEmail: currentUserEmail, payload: JSON.stringify(payload) });
+  showLoading(false);
+  closeModal();
+  await reloadAll();
+}
+
+function readFormPayload(){
+  return {
+    title: $("fTitle").value.trim(),
+    description: $("fDesc").value.trim(),
+    assigneeName: $("fAssigneeName").value.trim(),
+    assigneeEmail: $("fAssigneeEmail").value.trim().toLowerCase(),
+    priority: $("fPriority").value,
+    status: $("fStatus").value,
+    dueDate: $("fDueDate").value,
+    link1: $("fLink1").value.trim(),
+    link2: $("fLink2").value.trim(),
+    link3: $("fLink3").value.trim()
+  };
+}
+
+// Detail + comments
+async function openDetail(id){
+  const t = tasks.find(x=>x.id===id);
+  showLoading(true);
+  const res = await jsonp("listComments", { taskId:id });
+  commentsCache[id] = res.data || [];
+  showLoading(false);
+
+  openModal(detailHtml(t, commentsCache[id]));
+  $("addCommentBtn").onclick = ()=>addComment(id);
+}
+
+function detailHtml(t, cs){
+  const links = [t.link1,t.link2,t.link3].filter(Boolean).map((l,i)=>`<a class="linkbtn" href="${l}" target="_blank">Link ${i+1}</a>`).join("");
+  const canReview = (t.status==="Done" && (isAdmin || (t.createdBy||"").toLowerCase()===currentUserEmail));
+
+  return `
+    <h3>${escapeHtml(t.title||"")}</h3>
+    <div class="small">Assignee: ${escapeHtml(t.assigneeName||t.assigneeEmail||"")}</div>
+    <div class="small">Creator: ${escapeHtml(t.createdBy||"")}</div>
+    <div class="small">Priority: ${escapeHtml(t.priority||"Normal")}</div>
+    <div class="small">Due: ${escapeHtml(t.dueDate||"-")}</div>
+    <br/>
+    <div class="desc">${escapeHtml(t.description||"")}</div>
+    ${links? `<div class="links">${links}</div>`:""}
+
+    <div class="row" style="gap:6px;margin-top:8px;">
+      ${canReview? `<button class="primary" onclick="approveTask('${t.id}')">Approved</button>
+        <button onclick="returnTask('${t.id}')">Return</button>`:""}
+      <button onclick="openEdit('${t.id}')">Edit</button>
+      <button onclick="closeModal()">Close</button>
+    </div>
+
+    <div class="comments">
+      <h4>Comments</h4>
+      <div id="commentList">
+        ${(cs||[]).map(c=>`
+          <div class="comment">
+            <div class="meta">${escapeHtml(c.authorName||c.authorEmail||"")} · ${escapeHtml(c.createdAt||"")}</div>
+            <div>${escapeHtml(c.comment||"")}</div>
+          </div>`).join("")}
+      </div>
+      <div class="field">
+        <textarea id="newComment" placeholder="Write a comment..."></textarea>
+      </div>
+      <button id="addCommentBtn" class="primary">Add comment</button>
+    </div>
+  `;
+}
+
+async function addComment(taskId){
+  const txt = $("newComment").value.trim();
+  if(!txt) return;
+  showLoading(true);
+
+  await jsonp("addComment", {
+    actorEmail: currentUserEmail,
+    payload: JSON.stringify({ taskId, comment: txt })
+  });
+
+  const res = await jsonp("listComments", { taskId });
+  commentsCache[taskId] = res.data||[];
+  showLoading(false);
+
+  $("commentList").innerHTML = commentsCache[taskId].map(c=>`
+    <div class="comment">
+      <div class="meta">${escapeHtml(c.authorName||c.authorEmail||"")} · ${escapeHtml(c.createdAt||"")}</div>
+      <div>${escapeHtml(c.comment||"")}</div>
+    </div>`).join("");
+  $("newComment").value="";
+}
+
+// Approve / Return
+async function approveTask(id){
+  if(!confirm("Approve this task? It will be archived.")) return;
+  showLoading(true);
+  await jsonp("approveTask", { actorEmail: currentUserEmail, id });
+  showLoading(false);
+  closeModal();
+  await reloadAll();
+}
+
+async function returnTask(id){
+  const reason = prompt("Return reason (required):")?.trim();
+  if(!reason) return;
+  showLoading(true);
+  await jsonp("returnTask", { actorEmail: currentUserEmail, id, reason });
+  showLoading(false);
+  closeModal();
+  await reloadAll();
+}
+
+// Update
+async function updateTask(payload){
+  showLoading(true);
+  await jsonp("updateTask", { actorEmail: currentUserEmail, payload: JSON.stringify(payload) });
+  showLoading(false);
+}
+
+// Reload all
+async function reloadAll(){
+  showLoading(true);
+  await loadTasks();
+  render();
+  showLoading(false);
+}
+
+// Escape
+function escapeHtml(s){
+  return String(s||"").replace(/[&<>"']/g, m=>({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[m]));
+}
+function escapeAttr(s){ return escapeHtml(s).replace(/"/g,"&quot;"); }
+
+// Buttons
+$("addBtn").onclick = openAdd;
+$("refreshBtn").onclick = ()=>reloadAll();
+
+// Init
 (async function init(){
   try{
     await login();
-    await loadTasks();
-    setInterval(loadTasks, 30000);
-    document.getElementById("refreshBtn").onclick = loadTasks;
+    await reloadAll();
   }catch(err){
     console.error(err);
     alert("Init error: " + err.message);
