@@ -68,14 +68,16 @@
       color:var(--text);
       padding:8px 12px;border-radius:10px;cursor:pointer;
       font-weight:600;
+      transition:transform .05s ease, opacity .2s ease;
     }
+    button:active{ transform:translateY(1px); }
     button.primary{
       background:linear-gradient(180deg,var(--accent),#5e43ff);
       border:none;color:white;
       box-shadow:0 8px 20px rgba(124,92,255,.35);
     }
     button.ghost{ background:transparent; }
-    button:disabled{ opacity:.5; cursor:not-allowed; }
+    button:disabled{ opacity:.55; cursor:not-allowed; transform:none; }
 
     main{
       flex:1;display:grid;grid-template-columns:repeat(3,1fr);
@@ -110,7 +112,8 @@
     .card h4{ margin:0 0 6px 0; font-size:15px; }
     .desc{
       font-size:12px;color:var(--muted);white-space:pre-wrap;margin-bottom:8px;
-      max-height:44px;overflow:hidden;
+      max-height:80px; /* ↑ 更明显，让员工知道有内容 */
+      overflow:hidden;
     }
     .meta{
       display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;
@@ -212,6 +215,7 @@ const API_BASE = "https://script.google.com/macros/s/AKfycbw5DMgrN-uG_FzPyn83P8S
 /*************** STATE ***************/
 let actor = null;
 let tasks = [];
+let loadingTasks = false;
 
 /*************** JSONP Helper ***************/
 function jsonp(action, params = {}) {
@@ -222,19 +226,21 @@ function jsonp(action, params = {}) {
     const qs = new URLSearchParams(params).toString();
     const url = API_BASE + "?" + qs;
 
+    const script = document.createElement("script");
+
     window[cb] = (data) => {
-      delete window[cb];
+      try { delete window[cb]; } catch {}
       script.remove();
       resolve(data);
     };
 
-    const script = document.createElement("script");
     script.src = url;
     script.onerror = () => {
-      delete window[cb];
+      try { delete window[cb]; } catch {}
       script.remove();
       reject(new Error("JSONP load error"));
     };
+
     document.body.appendChild(script);
   });
 }
@@ -262,10 +268,33 @@ async function ensureLogin(){
 
 /*************** LOAD TASKS ***************/
 async function loadTasks(){
-  const res = await jsonp("listTasks", { email: actor.email });
-  if (!res.ok) throw new Error(res.error);
-  tasks = res.tasks || [];
-  render();
+  if (!actor) return;
+  if (loadingTasks) return; // 防止并发刷新
+  loadingTasks = true;
+
+  const refreshBtn = document.getElementById("refreshBtn");
+  const oldText = refreshBtn.textContent;
+  refreshBtn.disabled = true;
+  refreshBtn.textContent = "Loading...";
+
+  try{
+    const res = await jsonp("listTasks", { email: actor.email });
+    if (!res.ok) throw new Error(res.error);
+
+    const list = res.tasks || [];
+    // ✅ 前端去重（按 id）
+    const map = new Map();
+    list.forEach(t => {
+      if (t && t.id) map.set(t.id, t);
+    });
+    tasks = [...map.values()];
+
+    render();
+  }finally{
+    loadingTasks = false;
+    refreshBtn.disabled = false;
+    refreshBtn.textContent = oldText;
+  }
 }
 
 /*************** RENDER ***************/
@@ -331,7 +360,6 @@ function cardEl(t){
       return;
     }
     if (newStatus==="Doing" && t.status==="Done" && canApprove(t)) {
-      // returning to doing via dropdown -> ask reason
       const reason = prompt("Reason to return to Doing?") || "";
       await jsonp("returnToDoing", { actorEmail: actor.email, id: t.id, reason });
     } else {
@@ -352,7 +380,6 @@ function cardEl(t){
     await loadTasks();
   });
 
-  // drag
   card.addEventListener("dragstart", (ev)=>{
     ev.dataTransfer.setData("text/plain", t.id);
   });
@@ -444,7 +471,7 @@ async function openDetail(t){
     const text = document.getElementById("cInput").value.trim();
     if (!text) return;
     await jsonp("addComment",{actorEmail:actor.email, taskId:t.id, text});
-    await openDetail(t); // reload detail
+    await openDetail(t);
   });
 
   const approveBtn = document.getElementById("approveBtn");
@@ -525,45 +552,61 @@ function renderTaskForm({mode, task={}}){
 }
 
 function bindForm({mode, task={}}){
-  document.getElementById("saveBtn").addEventListener("click", async ()=>{
-    const title = document.getElementById("f_title").value.trim();
-    const assigneeName = document.getElementById("f_assigneeName").value.trim();
-    const assigneeEmail = document.getElementById("f_assigneeEmail").value.trim().toLowerCase();
-    const priority = document.getElementById("f_priority").value;
-    const status = document.getElementById("f_status").value;
-    const dueDate = document.getElementById("f_dueDate").value;
-    const description = document.getElementById("f_description").value.trim();
-    const link1 = document.getElementById("f_link1").value.trim();
-    const link2 = document.getElementById("f_link2").value.trim();
-    const link3 = document.getElementById("f_link3").value.trim();
+  const saveBtn = document.getElementById("saveBtn");
+  let saving = false;
 
-    if (!title) return alert("Title required");
-    if (!assigneeEmail.endsWith("@cloverth.net")) return alert("Assignee must be cloverth email");
-    if (!dueDate) return alert("Due date required");
+  saveBtn.addEventListener("click", async ()=>{
+    if (saving) return;               // ✅ 防二次点击
+    saving = true;
+    saveBtn.disabled = true;
+    const oldText = saveBtn.textContent;
+    saveBtn.textContent = "Saving...";
 
-    if (mode==="create"){
-      const res = await jsonp("createTask", {
-        actorEmail: actor.email,
-        title, description, assigneeName, assigneeEmail,
-        priority, status,
-        dueDate,
-        link1, link2, link3
-      });
-      if (!res.ok) return alert(res.error);
-    } else {
-      const res = await jsonp("updateTask", {
-        actorEmail: actor.email,
-        id: task.id,
-        title, description, assigneeName, assigneeEmail,
-        priority, status,
-        dueDate,
-        link1, link2, link3
-      });
-      if (!res.ok) return alert(res.error);
+    try{
+      const title = document.getElementById("f_title").value.trim();
+      const assigneeName = document.getElementById("f_assigneeName").value.trim();
+      const assigneeEmail = document.getElementById("f_assigneeEmail").value.trim().toLowerCase();
+      const priority = document.getElementById("f_priority").value;
+      const status = document.getElementById("f_status").value;
+      const dueDate = document.getElementById("f_dueDate").value;
+      const description = document.getElementById("f_description").value.trim();
+      const link1 = document.getElementById("f_link1").value.trim();
+      const link2 = document.getElementById("f_link2").value.trim();
+      const link3 = document.getElementById("f_link3").value.trim();
+
+      if (!title) throw new Error("Title required");
+      if (!assigneeEmail.endsWith("@cloverth.net")) throw new Error("Assignee must be cloverth email");
+      if (!dueDate) throw new Error("Due date required");
+
+      if (mode==="create"){
+        const res = await jsonp("createTask", {
+          actorEmail: actor.email,
+          title, description, assigneeName, assigneeEmail,
+          priority, status, dueDate,
+          link1, link2, link3
+        });
+        if (!res.ok) throw new Error(res.error);
+      } else {
+        const res = await jsonp("updateTask", {
+          actorEmail: actor.email,
+          id: task.id,
+          title, description, assigneeName, assigneeEmail,
+          priority, status, dueDate,
+          link1, link2, link3
+        });
+        if (!res.ok) throw new Error(res.error);
+      }
+
+      closeModal();
+      await loadTasks();
+
+    }catch(err){
+      alert(err.message);
+    }finally{
+      saving = false;
+      saveBtn.disabled = false;
+      saveBtn.textContent = oldText;
     }
-
-    closeModal();
-    await loadTasks();
   });
 }
 
@@ -615,7 +658,7 @@ function escapeAttr(s){ return escapeHtml(s).replace(/"/g,"&quot;"); }
     location.reload();
   });
 
-  // light auto refresh every 60s
+  // auto refresh every 60s (不会并发、不会重复显示)
   setInterval(loadTasks, 60000);
 })();
 </script>
