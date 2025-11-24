@@ -1,637 +1,624 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>JM Kanban – Team</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
   <style>
     :root{
-      --bg:#0b0c10;--panel:#11131a;--panel-2:#151824;--text:#e8ebf5;--muted:#9aa3b2;
-      --accent:#7c5cff;--urgent:#ff6b6b;--planned:#ffd166;--normal:#6ee7b7;
-      --border:rgba(255,255,255,.08);--radius:16px;
+      --bg:#0b0c10;
+      --panel:#11131a;
+      --panel-2:#151824;
+      --text:#e8ebf5;
+      --muted:#9aa3b2;
+      --accent:#7c5cff;
+      --accent-2:#9a86ff;
+      --ok:#1fbf75;
+      --warn:#ffb020;
+      --danger:#ff5a5a;
+      --line:rgba(255,255,255,0.06);
+      --radius:18px;
     }
-    *{box-sizing:border-box}
-    body{margin:0;font-family:Inter,system-ui;background:
-      radial-gradient(1200px 800px at 10% -10%, #1c1f2b 0%, transparent 60%),
-      radial-gradient(1000px 700px at 110% 0%, #151a2d 0%, transparent 60%),
-      var(--bg);
-      color:var(--text);height:100vh;display:flex;flex-direction:column;
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family:Inter,system-ui,Segoe UI,Roboto,sans-serif;
+      background:
+        radial-gradient(1200px 800px at 10% -10%, #1c1f2b 0%, transparent 60%),
+        radial-gradient(1000px 700px at 110% 0%, #151a2d 0%, transparent 60%),
+        var(--bg);
+      color:var(--text);
+      height:100vh;
+      display:flex;
+      flex-direction:column;
     }
     header{
-      display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--border);
-      background:rgba(10,11,16,.9);backdrop-filter:blur(8px);
-      position:sticky;top:0;z-index:10;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:14px 16px;
+      border-bottom:1px solid var(--line);
+      background:rgba(10,10,14,0.6);
+      backdrop-filter: blur(12px);
     }
-    .logo{display:flex;align-items:center;gap:8px;font-weight:700}
-    .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 14px var(--accent)}
-    .spacer{flex:1}
-    .btn{
-      background:var(--panel-2);border:1px solid var(--border);color:var(--text);
-      padding:8px 12px;border-radius:12px;cursor:pointer;font-weight:600;
+    .brand{
+      display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.4px;
+      background:linear-gradient(90deg,#fff,#c8d0ff);
+      -webkit-background-clip:text;background-clip:text;color:transparent;
     }
-    .btn.primary{background:linear-gradient(180deg,#8b74ff,#6f55ff);border:none}
-    .btn.ghost{background:transparent}
-    .chip{font-size:12px;padding:4px 8px;border-radius:999px;border:1px solid var(--border);color:var(--muted)}
-    .chip.urgent{color:var(--urgent);border-color:rgba(255,107,107,.5)}
-    .chip.planned{color:var(--planned);border-color:rgba(255,209,102,.5)}
-    .chip.normal{color:var(--normal);border-color:rgba(110,231,183,.5)}
+    .brand-dot{
+      width:10px;height:10px;border-radius:999px;background:var(--accent);
+      box-shadow:0 0 18px var(--accent);
+    }
+    .rightbar{
+      display:flex;align-items:center;gap:10px;
+    }
+    .pill{
+      background:var(--panel);
+      border:1px solid var(--line);
+      padding:6px 10px;border-radius:999px;font-size:12px;color:var(--muted);
+    }
+    button{
+      background:var(--panel-2);
+      border:1px solid var(--line);
+      color:var(--text);
+      padding:8px 12px;border-radius:10px;cursor:pointer;
+      font-weight:600;
+    }
+    button.primary{
+      background:linear-gradient(180deg,var(--accent),#5e43ff);
+      border:none;color:white;
+      box-shadow:0 8px 20px rgba(124,92,255,.35);
+    }
+    button.ghost{ background:transparent; }
+    button:disabled{ opacity:.5; cursor:not-allowed; }
 
-    main{flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:14px;padding:14px}
+    main{
+      flex:1;display:grid;grid-template-columns:repeat(3,1fr);
+      gap:12px;padding:12px;
+      min-height:0;
+    }
     .col{
-      background:rgba(17,19,26,.7);border:1px dashed var(--border);border-radius:18px;
-      padding:12px;display:flex;flex-direction:column;min-height:0;
+      background:rgba(20,22,30,0.6);
+      border:1px dashed var(--line);
+      border-radius:var(--radius);
+      display:flex;flex-direction:column;min-height:0;
     }
-    .col h3{margin:0 0 8px 0;font-size:18px;display:flex;align-items:center;gap:8px}
-    .count{margin-left:auto;background:var(--panel-2);border:1px solid var(--border);
-      width:28px;height:28px;display:grid;place-items:center;border-radius:999px;font-size:12px}
-    .list{flex:1;overflow:auto;display:flex;flex-direction:column;gap:10px;padding-right:4px}
-    .empty{color:var(--muted);font-size:13px;text-align:center;margin-top:20px}
-
+    .col-head{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:12px 12px 8px;
+      font-weight:700;color:#cfd6ea;
+    }
+    .count{
+      background:rgba(255,255,255,0.06);
+      padding:2px 8px;border-radius:999px;font-size:12px;
+    }
+    .cards{
+      padding:8px;overflow:auto;display:flex;flex-direction:column;gap:8px;
+      min-height:0;
+    }
     .card{
-      background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:12px;
-      box-shadow:0 10px 30px rgba(0,0,0,.35);cursor:grab;
+      background:var(--panel);
+      border:1px solid var(--line);
+      border-radius:14px;padding:10px;
+      box-shadow:0 10px 30px rgba(0,0,0,.35);
     }
-    .card-title{font-weight:700;margin-bottom:4px}
-    .card-desc{font-size:13px;color:var(--muted);white-space:pre-wrap;max-height:3.6em;overflow:hidden}
-    .meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-    .meta .chip{font-weight:600}
-    .row{display:flex;align-items:center;gap:8px;margin-top:8px}
-    select,input,textarea{
-      width:100%;background:var(--panel-2);border:1px solid var(--border);color:var(--text);
-      padding:8px 10px;border-radius:10px;font-size:14px;outline:none;
+    .card h4{ margin:0 0 6px 0; font-size:15px; }
+    .desc{
+      font-size:12px;color:var(--muted);white-space:pre-wrap;margin-bottom:8px;
+      max-height:44px;overflow:hidden;
     }
-    textarea{min-height:90px;resize:vertical}
+    .meta{
+      display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;
+      font-size:11px;color:#c9d0e5;
+    }
+    .tag{
+      padding:3px 7px;border-radius:999px;border:1px solid var(--line);
+      background:rgba(255,255,255,0.04);
+    }
+    .tag.priority.Urgent{ border-color:rgba(255,90,90,.6); color:#ffb1b1; background:rgba(255,90,90,.08); }
+    .tag.priority.Planned{ border-color:rgba(255,176,32,.6); color:#ffd69a; background:rgba(255,176,32,.08); }
+    .tag.priority.Normal{ border-color:rgba(124,92,255,.6); color:#d6ccff; background:rgba(124,92,255,.08); }
 
-    /* Modal */
-    .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;z-index:100}
-    .modal{
-      position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);
-      width:min(920px,94vw);max-height:90vh;overflow:auto;
-      background:var(--panel);border:1px solid var(--border);border-radius:18px;padding:16px;
-      display:none;z-index:101;
+    .card-actions{
+      display:flex;align-items:center;justify-content:space-between;gap:8px;
     }
-    .modal h2{margin:0 0 12px 0}
+    select{
+      background:var(--panel-2);color:var(--text);border:1px solid var(--line);
+      padding:6px;border-radius:8px;font-size:12px;
+    }
+    .links a{ color:#bfc8ff;font-size:12px; text-decoration:none; }
+    .links a:hover{ text-decoration:underline; }
+
+    /* modal */
+    .backdrop{
+      position:fixed;inset:0;background:rgba(0,0,0,.6);
+      display:none;align-items:center;justify-content:center;z-index:50;
+      padding:16px;
+    }
+    .modal{
+      width:min(820px,100%);background:#0e1016;border:1px solid var(--line);
+      border-radius:18px;padding:16px;box-shadow:0 20px 60px rgba(0,0,0,.6);
+      max-height:90vh;overflow:auto;
+    }
+    .modal h3{ margin:0 0 12px 0; }
     .grid{
       display:grid;grid-template-columns:1fr 1fr;gap:10px;
     }
-    .grid-1{grid-template-columns:1fr}
-    .modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
-    .close{float:right;cursor:pointer;font-size:18px;color:var(--muted)}
+    .field label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px;}
+    .field input,.field textarea{
+      width:100%;background:var(--panel);border:1px solid var(--line);color:var(--text);
+      padding:8px;border-radius:10px;font-size:14px;
+    }
+    .field textarea{ min-height:90px;resize:vertical; }
+    .modal-actions{
+      display:flex;justify-content:flex-end;gap:8px;margin-top:12px;
+    }
     .comment{
-      background:var(--panel-2);border:1px solid var(--border);border-radius:12px;padding:8px;margin-top:6px;
+      border-top:1px dashed var(--line);padding-top:8px;margin-top:8px;
+    }
+    .comment .citem{
+      padding:6px 0;border-bottom:1px dashed var(--line);
       font-size:13px;
     }
-    .comment .who{color:var(--muted);font-size:12px;margin-bottom:4px}
-
-    @media (max-width: 900px){
-      main{grid-template-columns:1fr}
+    .comment .cmeta{ font-size:11px;color:var(--muted); }
+    .comment-box{ display:flex;gap:6px;margin-top:6px; }
+    .comment-box input{ flex:1; }
+    @media (max-width: 960px){
+      main{ grid-template-columns:1fr; }
+      .grid{ grid-template-columns:1fr; }
     }
   </style>
 </head>
 <body>
+
 <header>
-  <div class="logo"><span class="dot"></span>JM Kanban</div>
-  <div class="chip" id="userChip">not logged in</div>
-  <div class="spacer"></div>
-  <button class="btn ghost" id="refreshBtn">Refresh</button>
-  <button class="btn primary" id="addBtn">+ Add task</button>
-  <button class="btn" id="logoutBtn">Logout</button>
+  <div class="brand"><span class="brand-dot"></span>JM Kanban <span style="font-weight:500;font-size:12px;color:#98a0b6">Team board</span></div>
+  <div class="rightbar">
+    <div id="userPill" class="pill">Not logged in</div>
+    <button id="logoutBtn" class="ghost" style="display:none;">Logout</button>
+    <button id="refreshBtn">Refresh</button>
+    <button id="addBtn" class="primary">+ Add task</button>
+  </div>
 </header>
 
 <main>
   <section class="col" data-status="To Do">
-    <h3>To Do <span class="count" id="c-todo">0</span></h3>
-    <div class="list" id="todoList"></div>
+    <div class="col-head">To Do <span class="count" id="c_todo">0</span></div>
+    <div class="cards" id="todoCards"></div>
   </section>
   <section class="col" data-status="Doing">
-    <h3>Doing <span class="count" id="c-doing">0</span></h3>
-    <div class="list" id="doingList"></div>
+    <div class="col-head">Doing <span class="count" id="c_doing">0</span></div>
+    <div class="cards" id="doingCards"></div>
   </section>
   <section class="col" data-status="Done">
-    <h3>Done <span class="count" id="c-done">0</span></h3>
-    <div class="list" id="doneList"></div>
+    <div class="col-head">Done / Approved <span class="count" id="c_done">0</span></div>
+    <div class="cards" id="doneCards"></div>
   </section>
 </main>
 
-<div class="backdrop" id="backdrop"></div>
-
-<!-- Edit / Create Modal -->
-<div class="modal" id="editModal">
-  <div class="close" onclick="closeModal()">✕</div>
-  <h2 id="editTitle">Create task</h2>
-
-  <div class="grid">
-    <div>
-      <label>Title</label>
-      <input id="f-title" placeholder="e.g. Follow up client A2-..." />
-    </div>
-    <div>
-      <label>Assignee (name)</label>
-      <input id="f-assigneeName" placeholder="e.g. Lita" />
-    </div>
-    <div>
-      <label>Assignee (email)</label>
-      <input id="f-assigneeEmail" placeholder="name@cloverth.net" />
-    </div>
-    <div>
-      <label>Priority</label>
-      <select id="f-priority">
-        <option>Urgent</option>
-        <option>Planned</option>
-        <option selected>Normal</option>
-      </select>
-    </div>
-    <div>
-      <label>Due date (required)</label>
-      <input id="f-dueDate" type="date"/>
-    </div>
-    <div>
-      <label>Status</label>
-      <select id="f-status">
-        <option>To Do</option>
-        <option>Doing</option>
-        <option>Done</option>
-        <option>Approved</option>
-      </select>
-    </div>
-
-    <div class="grid-1" style="grid-column:1/-1;">
-      <label>Description (visible to assignee + creator)</label>
-      <textarea id="f-desc"></textarea>
-    </div>
-
-    <div>
-      <label>Link 1</label>
-      <input id="f-link1" placeholder="Google Drive / Doc link"/>
-    </div>
-    <div>
-      <label>Link 2</label>
-      <input id="f-link2"/>
-    </div>
-    <div class="grid-1" style="grid-column:1/-1;">
-      <label>Link 3</label>
-      <input id="f-link3"/>
-    </div>
-  </div>
-
-  <div class="modal-footer">
-    <button class="btn ghost" onclick="closeModal()">Cancel</button>
-    <button class="btn primary" onclick="saveTask()">Save</button>
-  </div>
-</div>
-
-<!-- Detail Modal -->
-<div class="modal" id="detailModal">
-  <div class="close" onclick="closeDetail()">✕</div>
-  <h2 id="d-title"></h2>
-  <div id="d-desc" class="card-desc"></div>
-  <div class="meta" id="d-meta"></div>
-  <div id="d-links" class="meta" style="margin-top:10px;"></div>
-
-  <div id="d-returned" class="comment" style="display:none;"></div>
-
-  <h3 style="margin-top:14px;">Comments</h3>
-  <div id="d-comments"></div>
-  <div style="margin-top:8px;">
-    <textarea id="d-newComment" placeholder="Write a comment..."></textarea>
-    <div class="modal-footer">
-      <button class="btn primary" onclick="addComment()">Post comment</button>
-    </div>
-  </div>
-
-  <hr style="border-color:var(--border);margin:12px 0;">
-
-  <div class="grid">
-    <div>
-      <label>Change status</label>
-      <select id="d-status">
-        <option>To Do</option>
-        <option>Doing</option>
-        <option>Done</option>
-        <option>Approved</option>
-      </select>
-    </div>
-    <div id="creatorActions" style="display:none;">
-      <label>Creator actions</label>
-      <div style="display:flex;gap:6px;">
-        <button class="btn primary" onclick="approveTask()">Approve</button>
-        <button class="btn" onclick="openReturnBox()">Return to Doing</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="returnBox" style="display:none;margin-top:8px;">
-    <label>Return reason</label>
-    <textarea id="returnReason"></textarea>
-    <div class="modal-footer">
-      <button class="btn" onclick="submitReturn()">Submit Return</button>
-    </div>
-  </div>
-
-  <div class="modal-footer">
-    <button class="btn" onclick="archiveTask()">Archive</button>
-    <button class="btn ghost" onclick="closeDetail()">Close</button>
-  </div>
+<div class="backdrop" id="backdrop">
+  <div class="modal" id="modal"></div>
 </div>
 
 <script>
-/***************
- * JM Kanban Frontend v2
- ***************/
+/*************** CONFIG ***************/
 const API_BASE = "https://script.google.com/macros/s/AKfycbw5DMgrN-uG_FzPyn83P8SIg9E37BLipNTwnC5mEy2RyS_CIPTj_3XiOE-y5TahZDKP/exec";
 
-let directory = [];
-let allTasks = [];
-let me = "";
-let myName = "";
-let isAdmin = false;
-let currentEditId = null;
-let currentDetailTask = null;
+/*************** STATE ***************/
+let actor = null;
+let tasks = [];
 
-const PRIORITY_WEIGHT = { "Urgent": 0, "Planned": 1, "Normal": 2 };
+/*************** JSONP Helper ***************/
+function jsonp(action, params = {}) {
+  return new Promise((resolve, reject) => {
+    const cb = "cb_" + Math.random().toString(36).slice(2);
+    params.action = action;
+    params.callback = cb;
+    const qs = new URLSearchParams(params).toString();
+    const url = API_BASE + "?" + qs;
 
-function qs(id){ return document.getElementById(id); }
+    window[cb] = (data) => {
+      delete window[cb];
+      script.remove();
+      resolve(data);
+    };
 
-async function api(action, payload={}){
-  const res = await fetch(API_BASE, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ action, ...payload })
+    const script = document.createElement("script");
+    script.src = url;
+    script.onerror = () => {
+      delete window[cb];
+      script.remove();
+      reject(new Error("JSONP load error"));
+    };
+    document.body.appendChild(script);
   });
-  return res.json();
 }
 
-function promptLogin(){
-  let stored = localStorage.getItem("jm_user_email") || "";
-  stored = stored.trim().toLowerCase();
-  if(stored){
-    me = stored;
-    return Promise.resolve();
+/*************** LOGIN ***************/
+async function ensureLogin(){
+  let email = localStorage.getItem("jm_user_email") || "";
+  if (!email){
+    email = prompt("Please enter your company email (xxx@cloverth.net):")?.trim().toLowerCase() || "";
   }
-  let email = prompt("Please enter your company email to login (xxx@cloverth.net):");
-  email = (email || "").trim().toLowerCase();
-  if(email){
-    localStorage.setItem("jm_user_email", email);
-    me = email;
-  }
-  return Promise.resolve();
-}
+  if (!email) throw new Error("No email");
 
-async function init(){
-  await promptLogin();
-  const dirRes = await api("listDirectory");
-  directory = dirRes.directory || [];
-
-  const found = directory.find(d => d.email === me);
-  if(!found){
-    alert("Email not found in Directory. Please contact admin.");
+  const res = await jsonp("login", { email });
+  if (!res.ok) {
     localStorage.removeItem("jm_user_email");
-    location.reload();
-    return;
+    alert("Login failed: " + res.error);
+    throw new Error(res.error);
   }
-  myName = found.name || me.split("@")[0];
-  isAdmin = !!found.admin;
 
-  qs("userChip").textContent = `${me}${isAdmin ? " (admin)" : ""}`;
-
-  await loadTasks();
-  wireDnD();
-  setInterval(loadTasks, 30000);
+  actor = res;
+  localStorage.setItem("jm_user_email", actor.email);
+  document.getElementById("userPill").textContent = actor.email + (actor.admin ? " (admin)" : "");
+  document.getElementById("logoutBtn").style.display = "";
 }
 
+/*************** LOAD TASKS ***************/
 async function loadTasks(){
-  const res = await api("listTasks");
-  if(!res.ok){ alert(res.error || "Load tasks error"); return; }
-  allTasks = (res.tasks || []).filter(t => !t.archived);
-
-  // filter view by role
-  let viewTasks = allTasks.filter(t => {
-    if(isAdmin) return true;
-    return (t.assigneeEmail === me) || (t.createdBy === me);
-  });
-
-  render(viewTasks);
+  const res = await jsonp("listTasks", { email: actor.email });
+  if (!res.ok) throw new Error(res.error);
+  tasks = res.tasks || [];
+  render();
 }
 
-function render(tasks){
-  const todo = tasks.filter(t => t.status === "To Do");
-  const doing = tasks.filter(t => t.status === "Doing");
-  const done = tasks.filter(t => t.status === "Done");
-  const approved = tasks.filter(t => t.status === "Approved");
+/*************** RENDER ***************/
+function render(){
+  const todo = tasks.filter(t => t.status==="To Do");
+  const doing = tasks.filter(t => t.status==="Doing");
+  const done = tasks.filter(t => t.status==="Done" || t.status==="Approved");
 
-  // sort in each column
-  todo.sort(sortRule);
-  doing.sort(sortRule);
-  done.sort(sortRule);
-  approved.sort(sortRule);
+  setCol("todoCards", todo);
+  setCol("doingCards", doing);
+  setCol("doneCards", done);
 
-  drawList("todoList", todo);
-  drawList("doingList", doing);
-  drawList("doneList", done);
-
-  qs("c-todo").textContent = todo.length;
-  qs("c-doing").textContent = doing.length;
-  qs("c-done").textContent = done.length;
+  document.getElementById("c_todo").textContent = todo.length;
+  document.getElementById("c_doing").textContent = doing.length;
+  document.getElementById("c_done").textContent = done.length;
 }
 
-function sortRule(a,b){
-  const wa = PRIORITY_WEIGHT[a.priority] ?? 9;
-  const wb = PRIORITY_WEIGHT[b.priority] ?? 9;
-  if(wa !== wb) return wa - wb;
-  const da = a.dueDate ? new Date(a.dueDate).getTime() : 9e18;
-  const db = b.dueDate ? new Date(b.dueDate).getTime() : 9e18;
-  return da - db;
-}
-
-function drawList(elId, list){
-  const el = qs(elId);
+function setCol(id, list){
+  const el = document.getElementById(id);
   el.innerHTML = "";
-  if(list.length === 0){
-    el.innerHTML = `<div class="empty">No tasks</div>`;
-    return;
-  }
   list.forEach(t => el.appendChild(cardEl(t)));
 }
 
-function priorityChip(p){
-  const cls = (p||"Normal").toLowerCase();
-  return `<span class="chip ${cls}">${p||"Normal"}</span>`;
-}
-
 function cardEl(t){
-  const div = document.createElement("div");
-  div.className = "card";
-  div.draggable = true;
-  div.dataset.id = t.id;
-  div.dataset.status = t.status;
+  const card = document.createElement("div");
+  card.className="card";
+  card.draggable = true;
+  card.dataset.id = t.id;
 
-  const canSeeDesc = isAdmin || t.assigneeEmail === me || t.createdBy === me;
-  const desc = canSeeDesc ? (t.description || "") : "";
-
-  div.innerHTML = `
-    <div class="card-title">${escapeHtml(t.title || "(no title)")}</div>
-    <div class="card-desc">${escapeHtml(desc)}</div>
+  card.innerHTML = `
+    <h4>${escapeHtml(t.title||"(No title)")}</h4>
+    <div class="desc">${escapeHtml(t.description||"")}</div>
     <div class="meta">
-      <span class="chip">@${escapeHtml(t.assigneeName || t.assigneeEmail || "")}</span>
-      ${priorityChip(t.priority)}
-      <span class="chip">Due: ${t.dueDate ? fmtDate(t.dueDate) : "-"}</span>
-      <span class="chip">By: ${escapeHtml(t.createdBy || "")}</span>
+      <span class="tag">@${escapeHtml(t.assigneeName||t.assigneeEmail||"")}</span>
+      <span class="tag priority ${t.priority}">${t.priority||"Normal"}</span>
+      <span class="tag">Due: ${fmtDate(t.dueDate)}</span>
+      <span class="tag">By: ${escapeHtml(t.creatorEmail||"")}</span>
+    </div>
+    <div class="links">
+      ${t.link1 ? `<a target="_blank" href="${t.link1}">Link1</a> `:""}
+      ${t.link2 ? `<a target="_blank" href="${t.link2}">Link2</a> `:""}
+      ${t.link3 ? `<a target="_blank" href="${t.link3}">Link3</a> `:""}
+    </div>
+    <div class="card-actions">
+      <div style="display:flex;gap:6px;align-items:center;">
+        <select class="statusSel">
+          ${["To Do","Doing","Done","Approved"].map(s=>`<option ${t.status===s?"selected":""}>${s}</option>`).join("")}
+        </select>
+        ${canEditTask(t) ? `<button class="ghost editBtn">Edit</button>`:""}
+      </div>
+      <div style="display:flex;gap:6px;">
+        <button class="ghost detailBtn">Detail</button>
+        ${canArchiveTask(t) ? `<button class="ghost archiveBtn">Archive</button>`:""}
+      </div>
     </div>
   `;
-  div.addEventListener("click", ()=>openDetail(t.id));
-  div.addEventListener("dragstart", onDragStart);
-  return div;
-}
 
-// ---- DnD ----
-let dragId = null;
-
-function wireDnD(){
-  document.querySelectorAll(".col").forEach(col=>{
-    col.addEventListener("dragover", e=>e.preventDefault());
-    col.addEventListener("drop", onDrop);
-  });
-}
-function onDragStart(e){
-  dragId = e.currentTarget.dataset.id;
-}
-async function onDrop(e){
-  if(!dragId) return;
-  const newStatus = e.currentTarget.dataset.status;
-  const task = allTasks.find(x=>x.id===dragId);
-  if(!task) return;
-
-  // permission
-  const isAssignee = task.assigneeEmail === me;
-  const isCreator = task.createdBy === me;
-
-  if(newStatus==="Approved" && !(isCreator||isAdmin)){
-    alert("Only creator/admin can approve.");
-    return;
-  }
-  if(!(isAssignee||isCreator||isAdmin)){
-    alert("No permission to move this task.");
-    return;
-  }
-
-  await api("updateStatus", { id: dragId, status: newStatus, actorEmail: me });
-  dragId=null;
-  await loadTasks();
-}
-
-// ---- Create/Edit ----
-qs("addBtn").onclick = ()=>openEdit(null);
-qs("refreshBtn").onclick = loadTasks;
-qs("logoutBtn").onclick = ()=>{
-  localStorage.removeItem("jm_user_email");
-  location.reload();
-};
-
-function openEdit(id){
-  currentEditId = id;
-  const t = id ? allTasks.find(x=>x.id===id) : null;
-
-  qs("editTitle").textContent = id ? "Edit task" : "Create task";
-  qs("f-title").value = t?.title || "";
-  qs("f-assigneeName").value = t?.assigneeName || myName;
-  qs("f-assigneeEmail").value = t?.assigneeEmail || me;
-  qs("f-priority").value = t?.priority || "Normal";
-  qs("f-status").value = t?.status || "To Do";
-  qs("f-dueDate").value = t?.dueDate ? t.dueDate.slice(0,10) : "";
-  qs("f-desc").value = t?.description || "";
-  qs("f-link1").value = t?.link1 || "";
-  qs("f-link2").value = t?.link2 || "";
-  qs("f-link3").value = t?.link3 || "";
-
-  showModal("editModal");
-}
-
-async function saveTask(){
-  const title = qs("f-title").value.trim();
-  const assigneeName = qs("f-assigneeName").value.trim();
-  let assigneeEmail = qs("f-assigneeEmail").value.trim().toLowerCase();
-  const priority = qs("f-priority").value;
-  const status = qs("f-status").value;
-  const dueDate = qs("f-dueDate").value;
-  const description = qs("f-desc").value;
-  const link1 = qs("f-link1").value.trim();
-  const link2 = qs("f-link2").value.trim();
-  const link3 = qs("f-link3").value.trim();
-
-  if(!title){ alert("Title required"); return; }
-  if(!dueDate){ alert("Due date required"); return; }
-
-  // validate assignee exists in directory
-  const d = directory.find(x=>x.email===assigneeEmail);
-  if(!d){
-    alert("Assignee email not found in Directory.");
-    return;
-  }
-
-  const payload = {
-    id: currentEditId,
-    title, description,
-    assigneeName: assigneeName || d.name || assigneeEmail.split("@")[0],
-    assigneeEmail,
-    status, priority, dueDate,
-    link1, link2, link3,
-    createdBy: currentEditId ? undefined : me,
-  };
-
-  const res = await api("upsertTask", payload);
-  if(!res.ok){ alert(res.error||"Save error"); return; }
-  closeModal();
-  await loadTasks();
-}
-
-// ---- Detail ----
-async function openDetail(id){
-  const t = allTasks.find(x=>x.id===id);
-  if(!t) return;
-  currentDetailTask = t;
-
-  const canSeeDesc = isAdmin || t.assigneeEmail===me || t.createdBy===me;
-  qs("d-title").textContent = t.title;
-  qs("d-desc").textContent = canSeeDesc ? (t.description||"") : "(hidden)";
-
-  qs("d-meta").innerHTML = `
-    <span class="chip">@${escapeHtml(t.assigneeName||t.assigneeEmail||"")}</span>
-    ${priorityChip(t.priority)}
-    <span class="chip">Due: ${t.dueDate ? fmtDate(t.dueDate) : "-"}</span>
-    <span class="chip">By: ${escapeHtml(t.createdBy||"")}</span>
-    <span class="chip">Status: ${escapeHtml(t.status||"")}</span>
-  `;
-
-  const links = [];
-  if(t.link1) links.push(`<a class="chip" target="_blank" href="${t.link1}">Link1</a>`);
-  if(t.link2) links.push(`<a class="chip" target="_blank" href="${t.link2}">Link2</a>`);
-  if(t.link3) links.push(`<a class="chip" target="_blank" href="${t.link3}">Link3</a>`);
-  qs("d-links").innerHTML = links.join(" ");
-
-  // returned reason show
-  if(t.returnedReason){
-    qs("d-returned").style.display="block";
-    qs("d-returned").innerHTML = `<div class="who">Returned reason</div>${escapeHtml(t.returnedReason)}`;
-  }else{
-    qs("d-returned").style.display="none";
-  }
-
-  drawComments(t);
-
-  qs("d-status").value = t.status;
-  qs("d-status").onchange = async ()=>{
-    const ns = qs("d-status").value;
-    const isAssignee = t.assigneeEmail===me;
-    const isCreator = t.createdBy===me;
-    if(ns==="Approved" && !(isCreator||isAdmin)){
+  card.querySelector(".statusSel").addEventListener("change", async (e)=>{
+    const newStatus = e.target.value;
+    if (newStatus==="Approved" && !canApprove(t)) {
       alert("Only creator/admin can approve.");
-      qs("d-status").value = t.status;
+      e.target.value = t.status;
       return;
     }
-    if(!(isAssignee||isCreator||isAdmin)){
-      alert("No permission.");
-      qs("d-status").value = t.status;
-      return;
+    if (newStatus==="Doing" && t.status==="Done" && canApprove(t)) {
+      // returning to doing via dropdown -> ask reason
+      const reason = prompt("Reason to return to Doing?") || "";
+      await jsonp("returnToDoing", { actorEmail: actor.email, id: t.id, reason });
+    } else {
+      await jsonp("moveTask", { actorEmail: actor.email, id: t.id, status: newStatus });
     }
-    await api("updateStatus",{id:t.id,status:ns,actorEmail:me});
     await loadTasks();
-    closeDetail();
-  };
-
-  // creator actions
-  const isCreator = t.createdBy===me;
-  qs("creatorActions").style.display = (isCreator||isAdmin) ? "block":"none";
-  qs("returnBox").style.display="none";
-
-  showModal("detailModal");
-}
-
-function drawComments(t){
-  const box = qs("d-comments");
-  box.innerHTML = "";
-  (t.comments||[]).forEach(c=>{
-    const div=document.createElement("div");
-    div.className="comment";
-    div.innerHTML=`<div class="who">${escapeHtml(c.actorEmail||"")} · ${fmtDateTime(c.time)}</div>
-      <div>${escapeHtml(c.text||"")}</div>`;
-    box.appendChild(div);
   });
+
+  const editBtn = card.querySelector(".editBtn");
+  if (editBtn) editBtn.addEventListener("click", ()=> openEdit(t));
+
+  card.querySelector(".detailBtn").addEventListener("click", ()=> openDetail(t));
+
+  const archiveBtn = card.querySelector(".archiveBtn");
+  if (archiveBtn) archiveBtn.addEventListener("click", async ()=>{
+    if (!confirm("Archive this task?")) return;
+    await jsonp("archiveTask", { actorEmail: actor.email, id: t.id });
+    await loadTasks();
+  });
+
+  // drag
+  card.addEventListener("dragstart", (ev)=>{
+    ev.dataTransfer.setData("text/plain", t.id);
+  });
+
+  return card;
 }
 
-async function addComment(){
-  if(!currentDetailTask) return;
-  const text = qs("d-newComment").value.trim();
-  if(!text) return;
-  const res = await api("addComment",{id:currentDetailTask.id,text,actorEmail:me});
-  if(!res.ok){ alert(res.error||"comment error"); return; }
-  qs("d-newComment").value="";
-  currentDetailTask = res.task;
-  drawComments(currentDetailTask);
-  await loadTasks();
+/*************** PERMISSIONS ***************/
+function canEditTask(t){
+  if (actor.admin) return true;
+  const ae = (t.assigneeEmail||"").toLowerCase();
+  const ce = (t.creatorEmail||"").toLowerCase();
+  return actor.email===ae || actor.email===ce;
+}
+function canArchiveTask(t){
+  if (actor.admin) return true;
+  return actor.email === (t.creatorEmail||"").toLowerCase();
+}
+function canApprove(t){
+  if (actor.admin) return true;
+  return actor.email === (t.creatorEmail||"").toLowerCase();
 }
 
-async function approveTask(){
-  const t=currentDetailTask;
-  if(!t) return;
-  const res=await api("approveTask",{id:t.id,actorEmail:me});
-  if(!res.ok){ alert(res.error||"approve error"); return; }
-  await loadTasks();
-  closeDetail();
-}
-
-function openReturnBox(){
-  qs("returnBox").style.display="block";
-}
-
-async function submitReturn(){
-  const t=currentDetailTask;
-  if(!t) return;
-  const reason=qs("returnReason").value.trim();
-  if(!reason){ alert("Please write reason"); return; }
-  const res=await api("returnTask",{id:t.id,reason,actorEmail:me});
-  if(!res.ok){ alert(res.error||"return error"); return; }
-  qs("returnReason").value="";
-  await loadTasks();
-  closeDetail();
-}
-
-async function archiveTask(){
-  const t=currentDetailTask;
-  if(!t) return;
-  if(!confirm("Archive this task?")) return;
-  const res=await api("archiveTask",{id:t.id,actorEmail:me});
-  if(!res.ok){ alert(res.error||"archive error"); return; }
-  await loadTasks();
-  closeDetail();
-}
-
-// ---- Modal helpers ----
-function showModal(id){
-  qs("backdrop").style.display="block";
-  qs(id).style.display="block";
+/*************** MODALS ***************/
+function openModal(html){
+  const bd = document.getElementById("backdrop");
+  const m = document.getElementById("modal");
+  m.innerHTML = html;
+  bd.style.display="flex";
 }
 function closeModal(){
-  qs("backdrop").style.display="none";
-  qs("editModal").style.display="none";
-}
-function closeDetail(){
-  qs("backdrop").style.display="none";
-  qs("detailModal").style.display="none";
+  document.getElementById("backdrop").style.display="none";
 }
 
-// ---- Utils ----
+async function openCreate(){
+  openModal(renderTaskForm({mode:"create"}));
+  bindForm({mode:"create"});
+}
+
+function openEdit(t){
+  openModal(renderTaskForm({mode:"edit", task:t}));
+  bindForm({mode:"edit", task:t});
+}
+
+async function openDetail(t){
+  const cr = await jsonp("listComments",{taskId:t.id});
+  const comments = cr.comments||[];
+
+  openModal(`
+    <h3>Task detail</h3>
+    <div class="field"><label>Title</label><div>${escapeHtml(t.title||"")}</div></div>
+    <div class="field"><label>Description</label><div style="white-space:pre-wrap">${escapeHtml(t.description||"")}</div></div>
+    <div class="field"><label>Assignee</label><div>${escapeHtml(t.assigneeName||"")} (${escapeHtml(t.assigneeEmail||"")})</div></div>
+    <div class="field"><label>Priority</label><div>${t.priority}</div></div>
+    <div class="field"><label>Status</label><div>${t.status}</div></div>
+    <div class="field"><label>Due date</label><div>${fmtDate(t.dueDate)}</div></div>
+    <div class="field"><label>Links</label>
+      <div class="links">
+        ${t.link1?`<a target="_blank" href="${t.link1}">${t.link1}</a><br>`:""}
+        ${t.link2?`<a target="_blank" href="${t.link2}">${t.link2}</a><br>`:""}
+        ${t.link3?`<a target="_blank" href="${t.link3}">${t.link3}</a><br>`:""}
+      </div>
+    </div>
+
+    <div class="comment">
+      <h4 style="margin:0 0 6px 0;">Comments</h4>
+      <div id="cList">
+        ${comments.map(c=>`
+          <div class="citem">
+            <div>${escapeHtml(c.text||"")}</div>
+            <div class="cmeta">${escapeHtml(c.authorEmail||"")} · ${fmtDateTime(c.createdAt)}</div>
+          </div>
+        `).join("") || `<div class="cmeta">No comments yet.</div>`}
+      </div>
+      <div class="comment-box">
+        <input id="cInput" placeholder="Write a comment..."/>
+        <button id="cSend" class="primary">Send</button>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      ${canApprove(t) && t.status==="Done" ? `<button id="approveBtn" class="primary">Approve</button>
+      <button id="returnBtn">Return to Doing</button>`:""}
+      <button onclick="closeModal()">Close</button>
+    </div>
+  `);
+
+  document.getElementById("cSend").addEventListener("click", async ()=>{
+    const text = document.getElementById("cInput").value.trim();
+    if (!text) return;
+    await jsonp("addComment",{actorEmail:actor.email, taskId:t.id, text});
+    await openDetail(t); // reload detail
+  });
+
+  const approveBtn = document.getElementById("approveBtn");
+  if (approveBtn) approveBtn.addEventListener("click", async ()=>{
+    await jsonp("approve",{actorEmail:actor.email, id:t.id});
+    closeModal(); await loadTasks();
+  });
+  const returnBtn = document.getElementById("returnBtn");
+  if (returnBtn) returnBtn.addEventListener("click", async ()=>{
+    const reason = prompt("Reason to return to Doing?") || "";
+    await jsonp("returnToDoing",{actorEmail:actor.email, id:t.id, reason});
+    closeModal(); await loadTasks();
+  });
+}
+
+function renderTaskForm({mode, task={}}){
+  const t = task;
+  return `
+    <h3>${mode==="create"?"Create task":"Edit task"}</h3>
+    <div class="grid">
+      <div class="field">
+        <label>Title</label>
+        <input id="f_title" value="${escapeAttr(t.title||"")}" placeholder="e.g. Follow up client A2-"/>
+      </div>
+      <div class="field">
+        <label>Assignee (name)</label>
+        <input id="f_assigneeName" value="${escapeAttr(t.assigneeName||"")}" placeholder="e.g. Lita"/>
+      </div>
+
+      <div class="field">
+        <label>Assignee (email)</label>
+        <input id="f_assigneeEmail" value="${escapeAttr(t.assigneeEmail||"")}" placeholder="xxx@cloverth.net"/>
+      </div>
+      <div class="field">
+        <label>Priority</label>
+        <select id="f_priority">
+          ${["Urgent","Planned","Normal"].map(p=>`<option ${t.priority===p?"selected":""}>${p}</option>`).join("")}
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Due date (required)</label>
+        <input id="f_dueDate" type="date" value="${t.dueDate?toInputDate(t.dueDate):""}"/>
+      </div>
+      <div class="field">
+        <label>Status</label>
+        <select id="f_status">
+          ${["To Do","Doing","Done","Approved"].map(s=>`<option ${t.status===s?"selected":""}>${s}</option>`).join("")}
+        </select>
+      </div>
+    </div>
+
+    <div class="field" style="margin-top:8px;">
+      <label>Description (visible to assignee + creator)</label>
+      <textarea id="f_description" placeholder="Details...">${escapeHtml(t.description||"")}</textarea>
+    </div>
+
+    <div class="grid" style="margin-top:8px;">
+      <div class="field">
+        <label>Link 1</label>
+        <input id="f_link1" value="${escapeAttr(t.link1||"")}"/>
+      </div>
+      <div class="field">
+        <label>Link 2</label>
+        <input id="f_link2" value="${escapeAttr(t.link2||"")}"/>
+      </div>
+      <div class="field">
+        <label>Link 3</label>
+        <input id="f_link3" value="${escapeAttr(t.link3||"")}"/>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button onclick="closeModal()">Cancel</button>
+      <button id="saveBtn" class="primary">Save</button>
+    </div>
+  `;
+}
+
+function bindForm({mode, task={}}){
+  document.getElementById("saveBtn").addEventListener("click", async ()=>{
+    const title = document.getElementById("f_title").value.trim();
+    const assigneeName = document.getElementById("f_assigneeName").value.trim();
+    const assigneeEmail = document.getElementById("f_assigneeEmail").value.trim().toLowerCase();
+    const priority = document.getElementById("f_priority").value;
+    const status = document.getElementById("f_status").value;
+    const dueDate = document.getElementById("f_dueDate").value;
+    const description = document.getElementById("f_description").value.trim();
+    const link1 = document.getElementById("f_link1").value.trim();
+    const link2 = document.getElementById("f_link2").value.trim();
+    const link3 = document.getElementById("f_link3").value.trim();
+
+    if (!title) return alert("Title required");
+    if (!assigneeEmail.endsWith("@cloverth.net")) return alert("Assignee must be cloverth email");
+    if (!dueDate) return alert("Due date required");
+
+    if (mode==="create"){
+      const res = await jsonp("createTask", {
+        actorEmail: actor.email,
+        title, description, assigneeName, assigneeEmail,
+        priority, status,
+        dueDate,
+        link1, link2, link3
+      });
+      if (!res.ok) return alert(res.error);
+    } else {
+      const res = await jsonp("updateTask", {
+        actorEmail: actor.email,
+        id: task.id,
+        title, description, assigneeName, assigneeEmail,
+        priority, status,
+        dueDate,
+        link1, link2, link3
+      });
+      if (!res.ok) return alert(res.error);
+    }
+
+    closeModal();
+    await loadTasks();
+  });
+}
+
+/*************** DRAG DROP ***************/
+document.querySelectorAll(".col").forEach(col=>{
+  col.addEventListener("dragover", e=>e.preventDefault());
+  col.addEventListener("drop", async e=>{
+    e.preventDefault();
+    const id = e.dataTransfer.getData("text/plain");
+    const status = col.dataset.status;
+    await jsonp("moveTask",{actorEmail:actor.email, id, status});
+    await loadTasks();
+  });
+});
+
+/*************** UTIL ***************/
 function fmtDate(d){
-  try{ return new Date(d).toISOString().slice(0,10); }catch{return d;}
+  if (!d) return "-";
+  try{ return new Date(d).toISOString().slice(0,10); }catch{ return d; }
 }
 function fmtDateTime(d){
-  try{ return new Date(d).toLocaleString(); }catch{return d;}
+  if (!d) return "-";
+  try{ return new Date(d).toLocaleString(); }catch{ return d; }
+}
+function toInputDate(d){
+  try{ return new Date(d).toISOString().slice(0,10); }catch{ return ""; }
 }
 function escapeHtml(s){
-  return (s||"").replace(/[&<>"']/g,m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]));
+  s = String(s||"");
+  return s.replace(/[&<>"']/g, m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]));
 }
+function escapeAttr(s){ return escapeHtml(s).replace(/"/g,"&quot;"); }
 
-init();
+/*************** INIT ***************/
+(async function init(){
+  try{
+    await ensureLogin();
+    await loadTasks();
+  }catch(err){
+    console.error(err);
+    alert("Init error: " + err.message);
+  }
+
+  document.getElementById("addBtn").addEventListener("click", openCreate);
+  document.getElementById("refreshBtn").addEventListener("click", loadTasks);
+
+  document.getElementById("logoutBtn").addEventListener("click", ()=>{
+    localStorage.removeItem("jm_user_email");
+    location.reload();
+  });
+
+  // light auto refresh every 60s
+  setInterval(loadTasks, 60000);
+})();
 </script>
+
 </body>
 </html>
