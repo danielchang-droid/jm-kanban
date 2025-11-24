@@ -1,375 +1,432 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>JM Kanban — Team</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
   <style>
     :root{
-      --bg:#090b10;--panel:#11131a;--panel2:#151824;--text:#e8ebf5;--muted:#9aa3b2;
-      --accent:#7c5cff;--accent2:#02d2a1;--danger:#ff6b6b;--warn:#ffb454;
+      --bg:#0b0c10;
+      --panel:#11131a;
+      --panel-2:#151824;
+      --text:#e8ebf5;
+      --muted:#9aa3b2;
+      --accent:#7c5cff;
+      --accent-2:#5a3ff0;
+      --good:#2ecc71;
+      --warn:#f1c40f;
+      --bad:#e74c3c;
+      --chip:#23263a;
+      --border:rgba(255,255,255,0.06);
       --radius:16px;
+      --shadow:0 12px 40px rgba(0,0,0,0.45);
     }
-    *{box-sizing:border-box}
-    body{margin:0;font-family:Inter,system-ui;background:
-      radial-gradient(1200px 800px at 10% -10%, #1c1f2b 0%, transparent 50%),
-      radial-gradient(1000px 700px at 110% 0%, #151a2d 0%, transparent 55%),
-      var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;}
-    header{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid #1c2030;}
-    .logo{font-weight:800;letter-spacing:.5px}
-    .spacer{flex:1}
-    button{background:var(--panel2);color:var(--text);border:1px solid #22273a;padding:8px 12px;border-radius:10px;cursor:pointer}
-    button.primary{background:var(--accent);border-color:transparent}
-    button.ghost{background:transparent;border-color:#2a3047}
-    button:disabled{opacity:.5;cursor:not-allowed}
-    .badge{font-size:12px;padding:2px 8px;border-radius:999px;background:#20263a;color:#cbd2e6}
-    .badge.urgent{background:#3a1f1f;color:#ffb3b3}
-    .badge.priority{background:#2a2a48;color:#c8c2ff}
-    .badge.plan{background:#1f3340;color:#b8f0ff}
-    .badge.pending{background:#3a2d14;color:#ffd28a}
-    main{flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:14px;padding:14px;overflow:auto}
-    .col{background:rgba(17,19,26,.9);border:1px solid #20263a;border-radius:18px;padding:10px;display:flex;flex-direction:column;min-height:70vh}
-    .col h3{margin:6px 8px 10px;font-size:16px;color:#d9def0;display:flex;justify-content:space-between;align-items:center}
-    .list{flex:1;display:flex;flex-direction:column;gap:8px;padding:4px}
-    .empty{color:var(--muted);font-size:13px;text-align:center;padding:18px;border:1px dashed #22273a;border-radius:12px}
-    .card{background:#0f1118;border:1px solid #242b42;border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:6px}
-    .card.dragging{opacity:.5}
-    .title{font-weight:700}
-    .meta{font-size:12px;color:var(--muted);display:flex;gap:8px;flex-wrap:wrap}
-    .link{font-size:12px;color:#9cc3ff;text-decoration:underline;word-break:break-all}
-    .actions{display:flex;gap:6px;margin-top:6px}
-    .actions button{font-size:12px;padding:6px 8px}
-    /* modal */
-    .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;padding:18px}
-    .modal{width:min(680px,100%);background:#0f1118;border:1px solid #252c45;border-radius:18px;padding:16px}
-    .modal h2{margin:0 0 12px}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    label{font-size:12px;color:var(--muted)}
-    input,select,textarea{
-      width:100%;background:#0b0d13;border:1px solid #252c45;color:var(--text);
-      padding:8px 10px;border-radius:10px;font-size:14px;outline:none
+    *{box-sizing:border-box;}
+    body{
+      margin:0;
+      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+      background:
+        radial-gradient(1200px 800px at 10% -10%, #1c1f2b 0%, transparent 60%),
+        radial-gradient(1000px 700px at 110% 0%, #151a2d 0%, transparent 60%),
+        var(--bg);
+      color:var(--text);
+      height:100vh;
+      display:flex;
+      flex-direction:column;
     }
-    textarea{min-height:80px;resize:vertical}
-    .row{display:flex;flex-direction:column;gap:6px}
-    .footer{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
+    header{
+      display:flex; align-items:center; justify-content:space-between;
+      padding:14px 18px; border-bottom:1px solid var(--border);
+      background:linear-gradient(180deg, rgba(15,17,25,0.9), rgba(11,12,16,0.9));
+      position:sticky; top:0; z-index:10;
+    }
+    .brand{
+      display:flex; align-items:center; gap:10px; font-weight:700;
+      letter-spacing:0.3px;
+    }
+    .brand .dot{width:8px;height:8px;border-radius:999px;background:var(--accent);box-shadow:0 0 12px var(--accent);}
+    .sub{font-size:12px;color:var(--muted);margin-left:8px;font-weight:500;}
+    .controls{display:flex; align-items:center; gap:8px;}
+    button{
+      background:var(--panel-2); color:var(--text); border:1px solid var(--border);
+      padding:8px 12px; border-radius:10px; cursor:pointer; font-weight:600;
+    }
+    button.primary{ background:linear-gradient(180deg,var(--accent),var(--accent-2)); border:none; }
+    button.ghost{ background:transparent; }
+    select, input, textarea{
+      background:var(--panel); color:var(--text); border:1px solid var(--border);
+      border-radius:10px; padding:8px 10px; outline:none; width:100%;
+    }
+    main{
+      display:grid; grid-template-columns:repeat(3,1fr); gap:14px; 
+      padding:14px; height:calc(100vh - 62px);
+    }
+    .col{
+      background:rgba(17,19,26,0.8); border:1px solid var(--border);
+      border-radius:18px; padding:10px; display:flex; flex-direction:column;
+      min-height:0; box-shadow:var(--shadow);
+    }
+    .col h3{margin:6px 6px 10px; font-size:14px;color:var(--muted);font-weight:700;display:flex;justify-content:space-between;}
+    .count{background:var(--chip); padding:2px 8px; border-radius:999px; color:#cfd5e3; font-size:12px;}
+    .list{flex:1; overflow:auto; padding:6px; border-radius:12px; border:1px dashed transparent;}
+    .list.dragover{ border-color:var(--accent); background:rgba(124,92,255,0.08); }
+    .card{
+      background:var(--panel); border:1px solid var(--border); border-radius:14px;
+      padding:10px; margin-bottom:8px; cursor:grab; position:relative;
+    }
+    .card .title{font-weight:700; font-size:14px; margin-bottom:4px;}
+    .card .desc{color:var(--muted); font-size:12px; white-space:pre-wrap;}
+    .meta{display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; font-size:11px;}
+    .chip{
+      background:var(--chip); padding:3px 7px; border-radius:999px; color:#cbd2e2;
+      display:inline-flex; align-items:center; gap:4px;
+    }
+    .prio-urgent{background:rgba(231,76,60,0.15); color:#ffb3ad; border:1px solid rgba(231,76,60,0.35);}
+    .prio-planned{background:rgba(241,196,15,0.15); color:#ffe58a; border:1px solid rgba(241,196,15,0.35);}
+    .prio-normal{background:rgba(46,204,113,0.12); color:#a9f5c6; border:1px solid rgba(46,204,113,0.3);}
+    .link a{color:#9fc5ff; text-decoration:none;}
+    .card-actions{display:flex; gap:6px; margin-top:8px;}
+    .card-actions button{padding:5px 8px; font-size:11px; border-radius:8px;}
+    .approve{background:rgba(46,204,113,0.15); border:1px solid rgba(46,204,113,0.35);}
+    .reject{background:rgba(231,76,60,0.15); border:1px solid rgba(231,76,60,0.35);}
+    /* Modal */
+    .backdrop{position:fixed; inset:0; background:rgba(0,0,0,0.5); display:none; z-index:20;}
+    .modal{
+      position:fixed; left:50%; top:50%; transform:translate(-50%,-50%);
+      width:min(680px,94vw); background:var(--panel-2); border:1px solid var(--border);
+      border-radius:18px; padding:14px; box-shadow:var(--shadow); display:none; z-index:21;
+    }
+    .modal h2{margin:4px 0 10px; font-size:16px;}
+    .grid{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+    .row{display:flex; flex-direction:column; gap:6px;}
+    .modal footer{display:flex; justify-content:flex-end; gap:8px; margin-top:12px;}
+    .small{font-size:12px;color:var(--muted);}
+    @media (max-width:900px){ main{grid-template-columns:1fr;} }
   </style>
 </head>
 <body>
 <header>
-  <div class="logo">● JM Kanban</div>
-  <div class="badge" id="userBadge">not logged in</div>
-  <div class="spacer"></div>
-  <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px">
-    <input type="checkbox" id="showAllToggle" style="width:auto" />
-    Admin: view all
-  </label>
-  <button id="refreshBtn" class="ghost">↻ Refresh</button>
-  <button id="addBtn" class="primary">＋ Add task</button>
+  <div class="brand">
+    <span class="dot"></span>
+    <span>JM Kanban</span>
+    <span class="sub">Team board</span>
+  </div>
+  <div class="controls">
+    <button class="ghost" id="whoBtn"></button>
+    <button id="refreshBtn">Refresh</button>
+    <button class="primary" id="addBtn">+ Add task</button>
+  </div>
 </header>
 
 <main>
   <section class="col" data-status="To Do">
-    <h3>To Do <span class="badge" id="cntTodo">0</span></h3>
+    <h3>To Do <span class="count" id="cntTodo">0</span></h3>
     <div class="list" id="listTodo"></div>
   </section>
+
   <section class="col" data-status="Doing">
-    <h3>Doing <span class="badge" id="cntDoing">0</span></h3>
+    <h3>Doing <span class="count" id="cntDoing">0</span></h3>
     <div class="list" id="listDoing"></div>
   </section>
+
   <section class="col" data-status="Done">
-    <h3>Done <span class="badge" id="cntDone">0</span></h3>
+    <h3>Done <span class="count" id="cntDone">0</span></h3>
     <div class="list" id="listDone"></div>
   </section>
 </main>
 
-<!-- modal -->
-<div class="backdrop" id="backdrop">
-  <div class="modal">
-    <h2>Create task</h2>
-    <div class="grid">
-      <div class="row">
-        <label>Title</label>
-        <input id="tTitle" placeholder="e.g. Follow up client A2-xx" />
-      </div>
-      <div class="row">
-        <label>Assignee (email)</label>
-        <select id="tAssignee"></select>
-      </div>
-      <div class="row">
-        <label>Due date</label>
-        <input id="tDue" type="date"/>
-      </div>
-      <div class="row">
-        <label>Priority</label>
-        <select id="tPriority">
-          <option value="Urgent">Urgent</option>
-          <option value="Priority">Priority</option>
-          <option value="Plan" selected>Plan</option>
-        </select>
-      </div>
-      <div class="row" style="grid-column:1/-1">
-        <label>Description</label>
-        <textarea id="tDesc"></textarea>
-      </div>
-      <div class="row" style="grid-column:1/-1">
-        <label>Google link / attachment</label>
-        <input id="tLink" placeholder="Paste Google Drive/Doc/Sheet link here"/>
-      </div>
-      <div class="row">
-        <label>Status</label>
-        <select id="tStatus">
-          <option>To Do</option>
-          <option>Doing</option>
-        </select>
-      </div>
+<div class="backdrop" id="backdrop"></div>
+
+<div class="modal" id="taskModal">
+  <h2>Create task</h2>
+  <div class="grid">
+    <div class="row">
+      <label class="small">Title</label>
+      <input id="mTitle" placeholder="e.g. Follow up client A2-24"/>
     </div>
-    <div class="footer">
-      <button id="cancelBtn">Cancel</button>
-      <button id="saveBtn" class="primary">Save</button>
+    <div class="row">
+      <label class="small">Assignee (email)</label>
+      <input id="mAssigneeEmail" placeholder="e.g. lita@cloverth.net"/>
+    </div>
+
+    <div class="row">
+      <label class="small">Due date</label>
+      <input id="mDue" type="date"/>
+    </div>
+    <div class="row">
+      <label class="small">Priority</label>
+      <select id="mPriority">
+        <option>Urgent</option>
+        <option>Planned</option>
+        <option selected>Normal</option>
+      </select>
+    </div>
+
+    <div class="row" style="grid-column:1/3;">
+      <label class="small">Google Link (attachment)</label>
+      <input id="mLink" placeholder="Paste Google Drive/Doc/Sheet link here"/>
+    </div>
+
+    <div class="row" style="grid-column:1/3;">
+      <label class="small">Description</label>
+      <textarea id="mDesc" rows="4" placeholder="Details..."></textarea>
+    </div>
+
+    <div class="row">
+      <label class="small">Initial status</label>
+      <select id="mStatus">
+        <option selected>To Do</option>
+        <option>Doing</option>
+      </select>
     </div>
   </div>
+  <footer>
+    <button id="mCancel">Cancel</button>
+    <button class="primary" id="mSave">Save</button>
+  </footer>
 </div>
 
 <script>
-/** ===== CONFIG ===== */
+/** ================= CONFIG ================= */
 const API_BASE = "https://script.google.com/macros/s/AKfycbw5DMgrN-uG_FzPyn83P8SIg9E37BLipNTwnC5mEy2RyS_CIPTj_3XiOE-y5TahZDKP/exec";
+const COMPANY_DOMAIN = "@cloverth.net";
+const ADMINS = ["danielchang@cloverth.net"];
 
-/** ===== JSONP helper ===== */
-function jsonp(action, params={}){
+/** ================= JSONP API ================= */
+function api(action, params={}){
   return new Promise((resolve,reject)=>{
-    const cb = "cb_" + Math.random().toString(36).slice(2);
+    const cb = "cb_"+Math.random().toString(36).slice(2);
+    const qs = new URLSearchParams({ action, callback: cb, ...params }).toString();
+    const url = API_BASE + "?" + qs;
+    const script = document.createElement("script");
+
     window[cb] = (res)=>{
-      cleanup();
-      if(!res.ok) reject(new Error(res.error||"API error"));
+      delete window[cb];
+      script.remove();
+      if (!res || res.ok === false) reject(res && res.error || "API error");
       else resolve(res.data);
     };
-    const q = new URLSearchParams({ action, callback: cb, ...params }).toString();
-    const s = document.createElement("script");
-    s.src = API_BASE + "?" + q;
-    s.onerror = ()=>{ cleanup(); reject(new Error("JSONP load error")); };
-    document.body.appendChild(s);
-    function cleanup(){
+    script.onerror = ()=>{
       delete window[cb];
-      s.remove();
-    }
+      script.remove();
+      reject("JSONP load error");
+    };
+    script.src = url;
+    document.body.appendChild(script);
   });
 }
 
-/** ===== State ===== */
-let currentUserEmail = localStorage.getItem("jm_user_email") || "";
-let isAdmin = false;
+/** ================= State ================= */
+let currentUserEmail = "";
 let directory = [];
 let tasks = [];
-let showAll = false;
 
-/** ===== DOM ===== */
-const userBadge = document.getElementById("userBadge");
-const showAllToggle = document.getElementById("showAllToggle");
-const addBtn = document.getElementById("addBtn");
-const refreshBtn = document.getElementById("refreshBtn");
-
-const listTodo = document.getElementById("listTodo");
-const listDoing = document.getElementById("listDoing");
-const listDone = document.getElementById("listDone");
-const cntTodo = document.getElementById("cntTodo");
-const cntDoing = document.getElementById("cntDoing");
-const cntDone = document.getElementById("cntDone");
-
-const backdrop = document.getElementById("backdrop");
-const cancelBtn = document.getElementById("cancelBtn");
-const saveBtn = document.getElementById("saveBtn");
-const tTitle = document.getElementById("tTitle");
-const tAssignee = document.getElementById("tAssignee");
-const tDue = document.getElementById("tDue");
-const tPriority = document.getElementById("tPriority");
-const tDesc = document.getElementById("tDesc");
-const tLink = document.getElementById("tLink");
-const tStatus = document.getElementById("tStatus");
-
-/** ===== Login ===== */
-async function ensureLogin(){
-  if(!currentUserEmail){
-    currentUserEmail = prompt("请输入你的 cloverth.net 邮箱：").trim().toLowerCase();
-    if(currentUserEmail) localStorage.setItem("jm_user_email", currentUserEmail);
-  }
-  if(!currentUserEmail.endsWith("@cloverth.net")){
-    alert("只允许 cloverth.net 邮箱登录");
-    currentUserEmail = "";
-    localStorage.removeItem("jm_user_email");
-    return ensureLogin();
+/** ================= Login ================= */
+async function login(){
+  currentUserEmail = localStorage.getItem("jm_user_email") || "";
+  if (!currentUserEmail || !currentUserEmail.endsWith(COMPANY_DOMAIN)) {
+    currentUserEmail = prompt("Please enter your company email (xxx@cloverth.net):","")?.trim().toLowerCase() || "";
+    if (!currentUserEmail.endsWith(COMPANY_DOMAIN)) {
+      alert("Login failed: must be @cloverth.net");
+      throw new Error("bad email");
+    }
+    localStorage.setItem("jm_user_email", currentUserEmail);
   }
 
-  const ping = await jsonp("ping",{ userEmail: currentUserEmail });
-  isAdmin = !!ping.admin;
-  userBadge.textContent = currentUserEmail + (isAdmin?" (admin)":"");
-  showAllToggle.disabled = !isAdmin;
+  directory = await api("getDirectory");
+  const exists = directory.some(d => (d.email||"").toLowerCase() === currentUserEmail);
+  const isAdmin = ADMINS.includes(currentUserEmail);
+
+  if (!exists && !isAdmin){
+    alert("Your email is not in Directory sheet.");
+    throw new Error("not in directory");
+  }
+
+  document.getElementById("whoBtn").textContent =
+    isAdmin ? ("Admin: "+currentUserEmail) : currentUserEmail;
 }
 
-/** ===== Load data ===== */
-async function loadDirectory(){
-  directory = await jsonp("listDirectory",{ userEmail: currentUserEmail });
-  tAssignee.innerHTML = directory.map(d=>`<option value="${d.email}">${d.name||d.email}</option>`).join("");
+/** ================= Render ================= */
+function clearLists(){
+  ["listTodo","listDoing","listDone"].forEach(id=>document.getElementById(id).innerHTML="");
 }
-async function loadTasks(){
-  tasks = await jsonp("listTasks",{ userEmail: currentUserEmail, showAll: showAll });
+function prioClass(p){
+  if (p==="Urgent") return "prio-urgent";
+  if (p==="Planned") return "prio-planned";
+  return "prio-normal";
 }
-
-/** ===== Render ===== */
-function prBadge(p){
-  if(p==="Urgent") return `<span class="badge urgent">Urgent</span>`;
-  if(p==="Priority") return `<span class="badge priority">Priority</span>`;
-  return `<span class="badge plan">Plan</span>`;
-}
-
 function render(){
-  const byStatus = { "To Do":[], "Doing":[], "Done":[], "Pending":[] };
+  clearLists();
+  const byStatus = { "To Do":[], "Doing":[], "Done":[], "Done(Approved)":[] };
+
   tasks.forEach(t=>{
-    if(!byStatus[t.status]) byStatus[t.status]=[];
-    byStatus[t.status].push(t);
+    const st = t.status || "To Do";
+    if (!byStatus[st]) byStatus[st]=[];
+    byStatus[st].push(t);
   });
 
-  function fill(listEl, arr){
-    listEl.innerHTML = "";
-    if(arr.length===0){
-      listEl.innerHTML = `<div class="empty">No tasks</div>`;
-      return;
-    }
-    for(const t of arr){
-      const pending = t.status==="Pending";
-      const canApprove = (isAdmin || t.createdBy===currentUserEmail) && pending;
+  const todo = byStatus["To Do"];
+  const doing = byStatus["Doing"];
+  const done = [...byStatus["Done"], ...byStatus["Done(Approved)"]];
 
-      const card = document.createElement("div");
-      card.className="card";
-      card.draggable = !pending; // pending tasks cannot be dragged
-      card.dataset.id = t.id;
-      card.dataset.status = t.status;
+  document.getElementById("cntTodo").textContent = todo.length;
+  document.getElementById("cntDoing").textContent = doing.length;
+  document.getElementById("cntDone").textContent = done.length;
 
-      card.innerHTML = `
-        <div class="title">${t.title||"(no title)"} ${prBadge(t.priority)}</div>
-        <div class="meta">
-          <span>@${t.assigneeName||t.assigneeEmail}</span>
-          <span>Due: ${t.dueDate||"-"}</span>
-          ${pending?`<span class="badge pending">Waiting approval</span>`:""}
-        </div>
-        ${t.description?`<div style="font-size:13px;color:#c8cfe4">${t.description}</div>`:""}
-        ${t.link?`<a class="link" href="${t.link}" target="_blank">Attachment link</a>`:""}
-        ${canApprove?`
-          <div class="actions">
-            <button class="primary" data-act="approve">Approve</button>
-            <button data-act="reject">Return to Doing</button>
-          </div>`:""}
-      `;
-
-      // approve/reject handlers
-      if(canApprove){
-        card.querySelector('[data-act="approve"]').onclick = async ()=>{
-          await jsonp("approveTask",{ userEmail: currentUserEmail, id:t.id });
-          await refresh();
-        };
-        card.querySelector('[data-act="reject"]').onclick = async ()=>{
-          await jsonp("rejectTask",{ userEmail: currentUserEmail, id:t.id });
-          await refresh();
-        };
-      }
-
-      // drag handlers
-      card.addEventListener("dragstart", (ev)=>{
-        card.classList.add("dragging");
-        ev.dataTransfer.setData("text/plain", t.id);
-      });
-      card.addEventListener("dragend", ()=>{
-        card.classList.remove("dragging");
-      });
-
-      listEl.appendChild(card);
-    }
-  }
-
-  fill(listTodo, byStatus["To Do"]);
-  fill(listDoing, byStatus["Doing"]);
-  // Done column shows both Done and Pending
-  fill(listDone, [...byStatus["Pending"], ...byStatus["Done"]]);
-
-  cntTodo.textContent = byStatus["To Do"].length;
-  cntDoing.textContent = byStatus["Doing"].length;
-  cntDone.textContent = byStatus["Done"].length + byStatus["Pending"].length;
+  todo.forEach(t=>document.getElementById("listTodo").appendChild(card(t)));
+  doing.forEach(t=>document.getElementById("listDoing").appendChild(card(t)));
+  done.forEach(t=>document.getElementById("listDone").appendChild(card(t)));
 }
 
-/** ===== Drag drop for columns ===== */
-document.querySelectorAll(".col").forEach(col=>{
-  col.addEventListener("dragover",(e)=>{ e.preventDefault(); });
-  col.addEventListener("drop", async (e)=>{
+function card(t){
+  const el = document.createElement("div");
+  el.className="card";
+  el.draggable = true;
+  el.dataset.id = t.id;
+  el.dataset.status = t.status||"To Do";
+
+  el.innerHTML = `
+    <div class="title">${escapeHtml(t.title||"")}</div>
+    <div class="desc">${escapeHtml(t.description||"")}</div>
+    <div class="meta">
+      <span class="chip ${prioClass(t.priority)}">${t.priority||"Normal"}</span>
+      ${t.assigneeName ? `<span class="chip">@${escapeHtml(t.assigneeName)} (${escapeHtml(t.assigneeEmail||"")})</span>`:""}
+      ${t.dueDate ? `<span class="chip">Due: ${new Date(t.dueDate).toLocaleDateString()}</span>`:""}
+      ${t.googleLink ? `<span class="chip link"><a href="${t.googleLink}" target="_blank">Open Link</a></span>`:""}
+      ${t.createdBy ? `<span class="chip">By: ${escapeHtml(t.createdBy)}</span>`:""}
+    </div>
+  `;
+
+  // Approve/Reject buttons (only for Done status, and only creator/admin)
+  const isAdmin = ADMINS.includes(currentUserEmail);
+  const canResolve = isAdmin || (t.createdBy && t.createdBy.toLowerCase()===currentUserEmail);
+  const isDonePending = (t.status==="Done");
+
+  if (isDonePending && canResolve){
+    const actions = document.createElement("div");
+    actions.className="card-actions";
+    actions.innerHTML = `
+      <button class="approve">Approve</button>
+      <button class="reject">Reject</button>
+    `;
+    actions.querySelector(".approve").onclick = ()=>resolveTask(t.id,"approved");
+    actions.querySelector(".reject").onclick = ()=>resolveTask(t.id,"rejected");
+    el.appendChild(actions);
+  }
+
+  el.addEventListener("dragstart", (ev)=>{
+    ev.dataTransfer.setData("text/plain", t.id);
+  });
+
+  return el;
+}
+
+/** ================= Data ================= */
+async function loadTasks(){
+  tasks = await api("getTasks", { userEmail: currentUserEmail });
+  render();
+}
+
+async function addTask(payload){
+  payload.createdBy = currentUserEmail;
+  await api("addTask", payload);
+  await loadTasks();
+}
+
+async function moveStatus(id, status){
+  await api("updateStatus", { id, status, userEmail: currentUserEmail });
+  await loadTasks();
+}
+
+async function resolveTask(id, resolution){
+  await api("resolveTask", { id, resolution, userEmail: currentUserEmail });
+  await loadTasks();
+}
+
+/** ================= Drag & Drop ================= */
+document.querySelectorAll(".list").forEach(list=>{
+  list.addEventListener("dragover", (e)=>{
     e.preventDefault();
+    list.classList.add("dragover");
+  });
+  list.addEventListener("dragleave", ()=>list.classList.remove("dragover"));
+  list.addEventListener("drop", async (e)=>{
+    e.preventDefault();
+    list.classList.remove("dragover");
     const id = e.dataTransfer.getData("text/plain");
-    const status = col.dataset.status; // To Do/Doing/Done
-    if(!id) return;
-    await jsonp("updateStatus",{ userEmail: currentUserEmail, id, status });
-    await refresh();
+    const col = list.closest(".col");
+    const newStatus = col.dataset.status;
+    await moveStatus(id, newStatus);
   });
 });
 
-/** ===== Create task flow ===== */
+/** ================= Modal ================= */
+const backdrop = document.getElementById("backdrop");
+const modal = document.getElementById("taskModal");
 function openModal(){
-  tTitle.value = "";
-  tDesc.value = "";
-  tDue.value = "";
-  tPriority.value = "Plan";
-  tLink.value = "";
-  tStatus.value = "To Do";
-  backdrop.style.display="flex";
+  backdrop.style.display="block";
+  modal.style.display="block";
 }
-function closeModal(){ backdrop.style.display="none"; }
+function closeModal(){
+  backdrop.style.display="none";
+  modal.style.display="none";
+}
+document.getElementById("addBtn").onclick=openModal;
+document.getElementById("mCancel").onclick=closeModal;
+backdrop.onclick=closeModal;
 
-saveBtn.onclick = async ()=>{
-  const email = tAssignee.value;
-  const assigneeObj = directory.find(d=>d.email===email) || {name:"",email};
-  const payload = {
-    title: tTitle.value.trim(),
-    description: tDesc.value.trim(),
-    assigneeName: assigneeObj.name || email.split("@")[0],
-    assigneeEmail: email,
-    status: tStatus.value,
-    priority: tPriority.value,
-    dueDate: tDue.value,
-    link: tLink.value.trim()
-  };
-  if(!payload.title){
-    alert("Title required");
+document.getElementById("mSave").onclick=async ()=>{
+  const title = document.getElementById("mTitle").value.trim();
+  const description = document.getElementById("mDesc").value.trim();
+  const assigneeEmail = document.getElementById("mAssigneeEmail").value.trim().toLowerCase();
+  const dueDate = document.getElementById("mDue").value;
+  const priority = document.getElementById("mPriority").value;
+  const status = document.getElementById("mStatus").value;
+  const googleLink = document.getElementById("mLink").value.trim();
+
+  if(!title){ alert("Title required"); return; }
+  if(assigneeEmail && !assigneeEmail.endsWith(COMPANY_DOMAIN)){
+    alert("Assignee must be @cloverth.net");
     return;
   }
-  await jsonp("createTask",{ userEmail: currentUserEmail, payload: JSON.stringify(payload) });
+
+  await addTask({
+    title, description, assigneeEmail,
+    dueDate: dueDate ? new Date(dueDate).toISOString() : "",
+    priority, status, googleLink
+  });
+
+  // reset
+  ["mTitle","mAssigneeEmail","mDesc","mDue","mLink"].forEach(id=>document.getElementById(id).value="");
+  document.getElementById("mPriority").value="Normal";
+  document.getElementById("mStatus").value="To Do";
   closeModal();
-  await refresh();
 };
 
-cancelBtn.onclick = closeModal;
-addBtn.onclick = openModal;
-refreshBtn.onclick = refresh;
-
-showAllToggle.onchange = async ()=>{
-  showAll = showAllToggle.checked;
-  await refresh();
-};
-
-/** ===== Refresh ===== */
-async function refresh(){
-  try{
-    await loadTasks();
-    render();
-  }catch(err){
-    console.error(err);
-    alert("Load tasks error: " + err.message);
-  }
+/** ================= Utils ================= */
+function escapeHtml(s){
+  return (s||"").replace(/[&<>"']/g, m=>({
+    "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"
+  }[m]));
 }
 
-/** ===== Init ===== */
+/** ================= Boot ================= */
 (async function init(){
-  await ensureLogin();
-  await loadDirectory();
-  await refresh();
-  setInterval(refresh, 30000);
+  try{
+    await login();
+    await loadTasks();
+    // auto refresh every 30s
+    setInterval(()=>loadTasks().catch(()=>{}), 30000);
+  }catch(err){
+    console.error(err);
+    alert("Init error: " + err);
+  }
 })();
+document.getElementById("refreshBtn").onclick=loadTasks;
 </script>
 </body>
 </html>
