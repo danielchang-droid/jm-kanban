@@ -1,349 +1,291 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>JM Kanban — Team</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
     :root{
-      --bg:#0b0c10; --panel:#11131a; --panel2:#151824;
-      --text:#e8ebf5; --muted:#9aa3b2; --accent:#7c5cff; --accent2:#5637ff;
-      --border:rgba(255,255,255,.06);
+      --bg:#0b0c10; --panel:#11131a; --panel-2:#151824; --text:#e8ebf5;
+      --muted:#9aa3b2; --accent:#7c5cff; --accent-2:#9a7bff; --danger:#ff6b6b;
       --radius:16px;
     }
-    *{box-sizing:border-box}
+    *{box-sizing:border-box;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;}
     body{
-      margin:0; font-family:Inter,system-ui,sans-serif; color:var(--text); background:
+      margin:0;
+      background:
         radial-gradient(1200px 800px at 10% -10%, #1c1f2b 0%, transparent 60%),
         radial-gradient(1000px 700px at 110% 0%, #151a2d 0%, transparent 60%),
         var(--bg);
-      height:100vh; display:flex; flex-direction:column;
+      color:var(--text); min-height:100vh;
     }
     header{
-      display:flex; align-items:center; justify-content:space-between;
-      padding:14px 18px; border-bottom:1px solid var(--border);
+      display:flex;align-items:center;justify-content:space-between;
+      padding:14px 18px;background:#0a0b0f;border-bottom:1px solid #1a1d27;
+      position:sticky;top:0;z-index:2;
     }
-    .brand{display:flex; align-items:center; gap:10px; font-weight:700;}
-    .brand-dot{width:10px;height:10px;border-radius:999px;background:var(--accent)}
-    .toolbar{display:flex; align-items:center; gap:10px;}
-    button{
-      background:var(--panel2); color:var(--text); border:1px solid var(--border);
-      padding:8px 12px; border-radius:12px; cursor:pointer; font-weight:600;
+    .brand{display:flex;align-items:center;gap:10px;font-weight:700;}
+    .dot{width:9px;height:9px;border-radius:999px;background:var(--accent);}
+    .actions{display:flex;gap:8px;align-items:center;}
+    button{border:0;border-radius:10px;padding:8px 12px;font-weight:600;cursor:pointer;}
+    .btn{background:var(--panel-2);color:var(--text);}
+    .btn-accent{background:var(--accent);color:white;}
+    .btn-accent:hover{background:var(--accent-2);}
+    .board{
+      display:grid;grid-template-columns:repeat(3,1fr);gap:12px;
+      padding:12px;height:calc(100vh - 62px);
     }
-    button:hover{border-color:rgba(255,255,255,.12)}
-    .btn-accent{background:linear-gradient(180deg,var(--accent),var(--accent2)); border:0}
-    select{
-      background:var(--panel2); color:var(--text); border:1px solid var(--border);
-      padding:7px 10px; border-radius:10px;
-    }
-
-    main{flex:1; padding:14px; display:grid; grid-template-columns:repeat(3,1fr); gap:12px;}
     .col{
-      background:rgba(17,19,26,.7);
-      border:1px solid var(--border); border-radius:var(--radius);
-      padding:10px; display:flex; flex-direction:column; min-height:0;
+      background:rgba(17,19,26,0.9);border:1px solid #1b1f2c;border-radius:var(--radius);
+      padding:10px;display:flex;flex-direction:column;min-height:0;
     }
-    .col-head{
-      display:flex; align-items:center; justify-content:space-between;
-      padding:8px 6px; font-weight:700; color:#d7dcf0;
+    .col h3{
+      margin:2px 4px 8px;font-size:14px;color:#cfd6e6;
+      display:flex;align-items:center;justify-content:space-between;
     }
-    .badge{font-size:12px;color:var(--muted); background:rgba(255,255,255,.06); padding:2px 8px; border-radius:999px;}
-    .list{flex:1; overflow:auto; padding:4px; display:flex; flex-direction:column; gap:8px;}
-    .empty{color:var(--muted); text-align:center; padding:24px 0; font-size:14px;}
-    .card{
-      background:var(--panel2); border:1px solid var(--border);
-      border-radius:14px; padding:10px; display:flex; flex-direction:column; gap:6px;
-      cursor:grab;
-    }
-    .title{font-weight:700}
-    .meta{font-size:12px;color:var(--muted); display:flex; gap:8px; flex-wrap:wrap;}
-    .pill{background:rgba(255,255,255,.06); padding:1px 6px; border-radius:999px;}
+    .count{color:var(--muted);font-size:12px;}
+    .list{overflow:auto;display:flex;flex-direction:column;gap:8px;padding:4px;min-height:0;}
+    .card{background:var(--panel);border:1px solid #23283a;border-radius:12px;padding:10px;}
+    .card .title{font-weight:700;font-size:14px;margin-bottom:6px;}
+    .desc{font-size:13px;margin-bottom:6px;color:#c9cfdd;white-space:pre-wrap;}
+    .meta{font-size:12px;color:var(--muted);display:flex;gap:8px;flex-wrap:wrap;}
+    .tag{background:#1a1e2b;border:1px solid #2a3046;border-radius:8px;padding:2px 6px;font-size:11px;color:#c8d0e3;}
+    .empty{color:#6f7789;font-size:13px;text-align:center;padding:18px;}
 
     /* Modal */
     .modal-backdrop{
-      position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:center; justify-content:center;
+      position:fixed;inset:0;background:rgba(0,0,0,.5);
+      display:none;align-items:center;justify-content:center;z-index:10;
     }
     .modal{
-      width:min(560px,92vw);
-      background:var(--panel); border:1px solid var(--border);
-      border-radius:18px; padding:14px; box-shadow:0 20px 80px rgba(0,0,0,.6);
+      width:min(720px,92vw);background:var(--panel);
+      border:1px solid #2a3046;border-radius:14px;padding:14px;
     }
-    .modal h3{margin:6px 4px 12px;}
-    .grid{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
-    label{font-size:12px;color:var(--muted);}
-    input, textarea{
-      width:100%; background:var(--panel2); color:var(--text);
-      border:1px solid var(--border); border-radius:10px; padding:8px 10px; margin-top:4px;
+    .modal h2{margin:0 0 10px;font-size:16px;}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+    label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px;}
+    input,textarea,select{
+      width:100%;background:var(--panel-2);border:1px solid #2b3147;color:var(--text);
+      padding:8px;border-radius:10px;font-size:14px;
     }
-    textarea{min-height:80px; resize:vertical;}
-    .modal-actions{display:flex; justify-content:flex-end; gap:8px; margin-top:12px;}
-    .danger{background:#a54b4b;border:0}
+    textarea{min-height:70px;resize:vertical;}
+    .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:10px;}
+    @media(max-width:900px){
+      .board{grid-template-columns:1fr;height:auto}
+      .grid{grid-template-columns:1fr}
+    }
   </style>
 </head>
 <body>
-
 <header>
-  <div class="brand"><span class="brand-dot"></span>JM Kanban <span style="font-weight:400;color:var(--muted);font-size:13px;margin-left:6px">Team board</span></div>
-  <div class="toolbar">
-    <select id="langSel">
-      <option value="en">English</option>
-      <option value="zh">中文（简体）</option>
-      <option value="th">ไทย</option>
-      <option value="ru">Русский</option>
-    </select>
-    <button class="btn-accent" id="addBtn">+ Add task</button>
-    <button id="refreshBtn">⟳ Refresh</button>
+  <div class="brand"><span class="dot"></span> JM Kanban <span style="font-size:12px;color:var(--muted);font-weight:500;">Team board</span></div>
+  <div class="actions">
+    <button class="btn" id="refreshBtn">⟳ Refresh</button>
+    <button class="btn-accent" id="addBtn">＋ Add task</button>
   </div>
 </header>
 
-<main>
-  <section class="col" data-status="todo">
-    <div class="col-head">To Do <span class="badge" id="count-todo">0</span></div>
-    <div class="list" id="list-todo"><div class="empty">No tasks</div></div>
+<main class="board">
+  <section class="col" data-status="To do">
+    <h3>To Do <span class="count" id="count-todo">0</span></h3>
+    <div class="list" id="list-todo"></div>
   </section>
-  <section class="col" data-status="doing">
-    <div class="col-head">Doing <span class="badge" id="count-doing">0</span></div>
-    <div class="list" id="list-doing"><div class="empty">No tasks</div></div>
+  <section class="col" data-status="Doing">
+    <h3>Doing <span class="count" id="count-doing">0</span></h3>
+    <div class="list" id="list-doing"></div>
   </section>
-  <section class="col" data-status="done">
-    <div class="col-head">Done <span class="badge" id="count-done">0</span></div>
-    <div class="list" id="list-done"><div class="empty">No tasks</div></div>
+  <section class="col" data-status="Done">
+    <h3>Done <span class="count" id="count-done">0</span></h3>
+    <div class="list" id="list-done"></div>
   </section>
 </main>
 
 <!-- Modal -->
 <div class="modal-backdrop" id="backdrop">
-  <div class="modal" role="dialog" aria-modal="true">
-    <h3>Create task</h3>
+  <div class="modal">
+    <h2>Create task</h2>
     <div class="grid">
       <div>
         <label>Title</label>
-        <input id="mTitle" placeholder="e.g. Follow up client A2-..." />
+        <input id="title" placeholder="e.g. Follow up client A2-">
       </div>
       <div>
-        <label>Assignee (Name)</label>
-        <input id="mAssignee" placeholder="e.g. Lita" />
+        <label>Assignee (name)</label>
+        <input id="assigneeName" placeholder="e.g. Lita">
       </div>
       <div>
         <label>Due date</label>
-        <input id="mDue" type="date" />
+        <input id="dueDate" type="date">
       </div>
       <div>
         <label>Status</label>
-        <select id="mStatus">
-          <option>To Do</option>
+        <select id="status">
+          <option>To do</option>
           <option>Doing</option>
           <option>Done</option>
         </select>
       </div>
       <div style="grid-column:1/-1">
         <label>Description</label>
-        <textarea id="mDesc" placeholder="Details..."></textarea>
+        <textarea id="description" placeholder="Details..."></textarea>
       </div>
     </div>
     <div class="modal-actions">
-      <button id="cancelBtn">Cancel</button>
+      <button class="btn" id="cancelBtn">Cancel</button>
       <button class="btn-accent" id="saveBtn">Save</button>
     </div>
   </div>
 </div>
 
 <script>
-/** ====== CONFIG ====== **/
+/** ================= CONFIG ================= */
 const API_BASE = "https://script.google.com/macros/s/AKfycbw5DMgrN-uG_FzPyn83P8SIg9E37BLipNTwnC5mEy2RyS_CIPTj_3XiOE-y5TahZDKP/exec";
+/** ========================================= */
 
-/** ====== STATE ====== **/
 let tasks = [];
-let currentUserEmail = localStorage.getItem("jm_user_email") || "";
 
-/** ====== HELPERS ====== **/
-const $ = sel => document.querySelector(sel);
+const el = id => document.getElementById(id);
+const showModal = (on=true)=> el("backdrop").style.display = on ? "flex" : "none";
 
-function normalizeStatus(s){
-  const t = String(s||"").trim().toLowerCase().replace(/\s|-/g,"");
-  if(t==="todo" || t==="tod0") return "todo";
-  if(t==="doing") return "doing";
-  if(t==="done") return "done";
-  // fallback
-  return "todo";
-}
-
-function fmtDate(d){
-  if(!d) return "";
-  try{
-    return String(d).slice(0,10);
-  }catch(e){ return d; }
-}
-
-/** ====== API: JSONP then fallback Fetch ====== **/
-function jsonp(action){
+/** ---------- JSONP helper (bypass CORS) ---------- */
+function jsonp(url){
   return new Promise((resolve,reject)=>{
-    const cb = "cb_"+Math.random().toString(36).slice(2);
-    const url = `${API_BASE}?action=${encodeURIComponent(action)}&callback=${cb}`;
+    const cb = "cb_" + Math.random().toString(36).slice(2);
     const script = document.createElement("script");
-    const timeout = setTimeout(()=>{ cleanup(); reject(new Error("JSONP timeout")); }, 10000);
+    const timer = setTimeout(()=>{
+      cleanup(); reject(new Error("JSONP timeout"));
+    }, 15000);
+
     function cleanup(){
-      clearTimeout(timeout);
+      clearTimeout(timer);
       delete window[cb];
       script.remove();
     }
-    window[cb] = (res)=>{ cleanup(); resolve(res); };
+
+    window[cb] = (data)=>{
+      cleanup();
+      resolve(data);
+    };
+
+    script.src = url + (url.includes("?")?"&":"?") + "callback=" + cb;
     script.onerror = ()=>{ cleanup(); reject(new Error("JSONP load error")); };
-    script.src = url;
     document.body.appendChild(script);
   });
 }
 
-async function get(action){
-  try{
-    const res = await jsonp(action);
-    if(res && res.ok) return res.data;
-    throw new Error(res?.error || "Bad JSONP response");
-  }catch(e){
-    // fallback to fetch JSON
-    const r = await fetch(`${API_BASE}?action=${encodeURIComponent(action)}`);
-    const j = await r.json();
-    if(j.ok) return j.data;
-    throw new Error(j.error || "Fetch fail");
-  }
-}
-
-async function post(payload){
-  const r = await fetch(API_BASE, {
-    method:"POST",
-    body: JSON.stringify(payload),
-    headers:{ "Content-Type":"application/json" }
-  });
-  const j = await r.json();
-  if(!j.ok) throw new Error(j.error || "POST fail");
-  return j.data;
-}
-
-/** ====== RENDER ====== **/
-function render(){
-  const buckets = { todo:[], doing:[], done:[] };
-  tasks.forEach(t=>{
-    buckets[ normalizeStatus(t.status) ].push(t);
-  });
-
-  ["todo","doing","done"].forEach(k=>{
-    const list = $("#list-"+k);
-    list.innerHTML = "";
-    const arr = buckets[k];
-    $("#count-"+k).textContent = arr.length;
-
-    if(!arr.length){
-      const div = document.createElement("div");
-      div.className="empty"; div.textContent="No tasks";
-      list.appendChild(div);
-      return;
-    }
-
-    arr.forEach(t=>{
-      const card = document.createElement("div");
-      card.className="card";
-      card.draggable=true;
-      card.dataset.id = t.id;
-
-      card.innerHTML = `
-        <div class="title">${t.title||"(no title)"}</div>
-        <div style="font-size:13px;color:#c8cde0">${t.description||""}</div>
-        <div class="meta">
-          ${t.assigneeName?`<span class="pill">👤 ${t.assigneeName}</span>`:""}
-          ${t.dueDate?`<span class="pill">📅 ${fmtDate(t.dueDate)}</span>`:""}
-        </div>
-      `;
-
-      // drag
-      card.addEventListener("dragstart", ev=>{
-        ev.dataTransfer.setData("text/plain", t.id);
-      });
-
-      list.appendChild(card);
-    });
-  });
-}
-
-/** ====== LOAD ====== **/
-async function loadAll(){
-  tasks = await get("listTasks");
+/** ---------- Load tasks ---------- */
+async function loadTasks(){
+  const res = await jsonp(API_BASE + "?action=tasks");
+  if(!res.ok) throw new Error(res.error || "load error");
+  tasks = (res.data || []).filter(t=>t && t.id);
   render();
 }
 
-/** ====== MODAL ====== **/
-function openModal(){
-  $("#backdrop").style.display="flex";
-}
-function closeModal(){
-  $("#backdrop").style.display="none";
-  $("#mTitle").value="";
-  $("#mDesc").value="";
-  $("#mAssignee").value="";
-  $("#mDue").value="";
-  $("#mStatus").value="To Do";
-}
-
-$("#addBtn").onclick=openModal;
-$("#cancelBtn").onclick=closeModal;
-$("#backdrop").addEventListener("click", e=>{
-  if(e.target.id==="backdrop") closeModal();
-});
-
-$("#saveBtn").onclick = async ()=>{
-  const title = $("#mTitle").value.trim();
-  if(!title){ alert("Title is required"); return; }
-
-  const payload = {
-    action:"addTask",
-    title,
-    description: $("#mDesc").value.trim(),
-    assigneeName: $("#mAssignee").value.trim(),
-    dueDate: $("#mDue").value,
-    status: $("#mStatus").value,
-    createdBy: currentUserEmail
+/** ---------- Render board ---------- */
+function render(){
+  const groups = {
+    "To do": tasks.filter(t=>t.status==="To do"),
+    "Doing": tasks.filter(t=>t.status==="Doing"),
+    "Done": tasks.filter(t=>t.status==="Done")
   };
 
-  try{
-    await post(payload);
-    closeModal();
-    await loadAll();
-  }catch(err){
-    alert("Save failed: "+err.message);
+  function renderList(listId, items){
+    const list = el(listId);
+    list.innerHTML = "";
+    if(items.length===0){
+      list.innerHTML = `<div class="empty">No tasks</div>`;
+      return;
+    }
+    items.forEach(t=>{
+      const card = document.createElement("div");
+      card.className="card";
+      card.innerHTML = `
+        <div class="title">${escapeHtml(t.title||"")}</div>
+        <div class="desc">${escapeHtml(t.description||"")}</div>
+        <div class="meta">
+          ${t.assigneeName?`<span class="tag">@${escapeHtml(t.assigneeName)}</span>`:""}
+          ${t.dueDate?`<span class="tag">Due: ${escapeHtml(t.dueDate)}</span>`:""}
+        </div>
+      `;
+      list.appendChild(card);
+    });
   }
-};
 
-$("#refreshBtn").onclick = ()=>loadAll().catch(e=>alert(e.message));
+  renderList("list-todo", groups["To do"]);
+  renderList("list-doing", groups["Doing"]);
+  renderList("list-done", groups["Done"]);
+  el("count-todo").textContent = groups["To do"].length;
+  el("count-doing").textContent = groups["Doing"].length;
+  el("count-done").textContent = groups["Done"].length;
+}
 
-/** ====== DROP ZONES ====== **/
-document.querySelectorAll(".col").forEach(col=>{
-  col.addEventListener("dragover", ev=>ev.preventDefault());
-  col.addEventListener("drop", async ev=>{
-    ev.preventDefault();
-    const id = ev.dataTransfer.getData("text/plain");
-    const st = col.dataset.status; // todo / doing / done
-    const statusLabel = st==="todo"?"To Do":st==="doing"?"Doing":"Done";
-    try{
-      await post({action:"moveTask", id, status: statusLabel});
-      await loadAll();
-    }catch(e){ alert(e.message); }
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, m=>({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[m]));
+}
+
+/** ---------- Add task ---------- */
+async function addTask(){
+  const task = {
+    title: el("title").value.trim(),
+    description: el("description").value.trim(),
+    assigneeName: el("assigneeName").value.trim(),
+    status: el("status").value,      // Must be exactly: "To do" / "Doing" / "Done"
+    dueDate: el("dueDate").value,
+    createdBy: localStorage.getItem("jm_user_email")||""
+  };
+
+  if(!task.title){ alert("Title required"); return; }
+
+  await fetch(API_BASE, {
+    method:"POST",
+    mode:"no-cors",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({action:"addTask", task})
   });
-});
 
-/** ====== INIT ====== **/
+  showModal(false);
+  clearModal();
+  await loadTasks(); // reload via JSONP -> UI must更新
+}
+
+function clearModal(){
+  el("title").value="";
+  el("description").value="";
+  el("assigneeName").value="";
+  el("dueDate").value="";
+  el("status").value="To do";
+}
+
+/** ---------- Init ---------- */
 (async function init(){
-  if(!currentUserEmail){
-    currentUserEmail = prompt("Enter your company email (for notifications):")?.trim().toLowerCase() || "";
-    if(currentUserEmail) localStorage.setItem("jm_user_email", currentUserEmail);
+  let email = localStorage.getItem("jm_user_email")||"";
+  if(!email){
+    email = prompt("Please enter your company email (for notifications):")?.trim().toLowerCase()||"";
+    if(email) localStorage.setItem("jm_user_email", email);
   }
+
   try{
-    await loadAll();
+    await loadTasks();
   }catch(err){
     console.error(err);
-    alert("Init error: "+err.message);
+    alert("Init error: "+err.message+"\n确认后端部署权限是 Anyone & API_BASE 对应最新 exec。");
   }
-})();
-</script>
 
+  // Auto refresh every 20s
+  setInterval(()=>loadTasks().catch(()=>{}), 20000);
+})();
+
+/** ---------- UI events ---------- */
+el("addBtn").onclick = ()=>showModal(true);
+el("cancelBtn").onclick = ()=>showModal(false);
+el("saveBtn").onclick = addTask;
+el("refreshBtn").onclick = loadTasks;
+el("backdrop").addEventListener("click", e=>{
+  if(e.target.id==="backdrop") showModal(false);
+});
+</script>
 </body>
 </html>
