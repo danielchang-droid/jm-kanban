@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>JM Kanban — Team</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -10,423 +10,603 @@
 
   <style>
     :root{
-      --bg:#0b0c10;
-      --panel:#11131a;
-      --panel-2:#151824;
-      --text:#e8ebf5;
-      --muted:#9aa3b2;
-      --accent:#7c5cff;
-      --accent-2:#5a3ff0;
-      --good:#2ecc71;
-      --warn:#f1c40f;
-      --bad:#e74c3c;
-      --chip:#23263a;
-      --border:rgba(255,255,255,0.06);
-      --radius:16px;
-      --shadow:0 12px 40px rgba(0,0,0,0.45);
+      --bg:#0b0c10; --panel:#11131a; --panel-2:#151824;
+      --text:#e8ebf5; --muted:#9aa3b2; --accent:#7c5cff;
+      --urgent:#ffb020; --ok:#22c55e; --danger:#ef4444;
+      --radius:18px;
     }
     *{box-sizing:border-box;}
     body{
-      margin:0;
-      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+      margin:0; font-family:Inter,system-ui,Arial,sans-serif;
       background:
         radial-gradient(1200px 800px at 10% -10%, #1c1f2b 0%, transparent 60%),
-        radial-gradient(1000px 700px at 110% 0%, #151a2d 0%, transparent 60%),
+        radial-gradient(1000px 700px at 110% 0%, #151a2d 0%, transparent 65%),
         var(--bg);
-      color:var(--text);
-      height:100vh;
-      display:flex;
-      flex-direction:column;
+      color:var(--text); height:100vh; display:flex; flex-direction:column;
     }
     header{
       display:flex; align-items:center; justify-content:space-between;
-      padding:14px 18px; border-bottom:1px solid var(--border);
-      background:linear-gradient(180deg, rgba(15,17,25,0.9), rgba(11,12,16,0.9));
-      position:sticky; top:0; z-index:10;
+      padding:14px 18px; border-bottom:1px solid #1b1f2b; background:rgba(7,9,14,.7); backdrop-filter: blur(8px);
+      position:sticky; top:0; z-index:2;
     }
-    .brand{
-      display:flex; align-items:center; gap:10px; font-weight:700;
-      letter-spacing:0.3px;
+    .brand{display:flex;align-items:center;gap:10px;font-weight:700;}
+    .dot{width:8px;height:8px;border-radius:999px;background:var(--accent);box-shadow:0 0 12px var(--accent);}
+    .toolbar{display:flex;align-items:center;gap:8px;}
+    button, select, input, textarea{
+      font-family:inherit; color:var(--text);
+      background:var(--panel); border:1px solid #232842; border-radius:12px;
+      padding:8px 10px; outline:none;
     }
-    .brand .dot{width:8px;height:8px;border-radius:999px;background:var(--accent);box-shadow:0 0 12px var(--accent);}
-    .sub{font-size:12px;color:var(--muted);margin-left:8px;font-weight:500;}
-    .controls{display:flex; align-items:center; gap:8px;}
-    button{
-      background:var(--panel-2); color:var(--text); border:1px solid var(--border);
-      padding:8px 12px; border-radius:10px; cursor:pointer; font-weight:600;
-    }
-    button.primary{ background:linear-gradient(180deg,var(--accent),var(--accent-2)); border:none; }
-    button.ghost{ background:transparent; }
-    select, input, textarea{
-      background:var(--panel); color:var(--text); border:1px solid var(--border);
-      border-radius:10px; padding:8px 10px; outline:none; width:100%;
-    }
-    main{
-      display:grid; grid-template-columns:repeat(3,1fr); gap:14px; 
-      padding:14px; height:calc(100vh - 62px);
+    button{cursor:pointer; font-weight:600;}
+    button.primary{background:linear-gradient(180deg,#7c5cff,#6548ff); border:none;}
+    button.ghost{background:transparent;border:1px solid #2a3050;}
+    button:disabled{opacity:.5;cursor:not-allowed;}
+    .board{
+      flex:1; display:grid; grid-template-columns:repeat(3,1fr);
+      gap:14px; padding:14px;
     }
     .col{
-      background:rgba(17,19,26,0.8); border:1px solid var(--border);
-      border-radius:18px; padding:10px; display:flex; flex-direction:column;
-      min-height:0; box-shadow:var(--shadow);
+      background:rgba(17,19,26,.75); border:1px solid #1f243a; border-radius:20px;
+      display:flex; flex-direction:column; min-height:0; overflow:hidden;
     }
-    .col h3{margin:6px 6px 10px; font-size:14px;color:var(--muted);font-weight:700;display:flex;justify-content:space-between;}
-    .count{background:var(--chip); padding:2px 8px; border-radius:999px; color:#cfd5e3; font-size:12px;}
-    .list{flex:1; overflow:auto; padding:6px; border-radius:12px; border:1px dashed transparent;}
-    .list.dragover{ border-color:var(--accent); background:rgba(124,92,255,0.08); }
-    .card{
-      background:var(--panel); border:1px solid var(--border); border-radius:14px;
-      padding:10px; margin-bottom:8px; cursor:grab; position:relative;
+    .col h3{
+      margin:0; padding:12px 12px; font-size:14px; letter-spacing:.4px;
+      display:flex; align-items:center; justify-content:space-between; color:#c8d0e6;
+      border-bottom:1px solid #1f243a; background:rgba(12,14,20,.8);
     }
-    .card .title{font-weight:700; font-size:14px; margin-bottom:4px;}
-    .card .desc{color:var(--muted); font-size:12px; white-space:pre-wrap;}
-    .meta{display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; font-size:11px;}
-    .chip{
-      background:var(--chip); padding:3px 7px; border-radius:999px; color:#cbd2e2;
-      display:inline-flex; align-items:center; gap:4px;
+    .count{font-size:12px;color:var(--muted);padding:2px 8px;border-radius:999px;background:#0f1220;border:1px solid #242a44;}
+    .list{
+      padding:10px; overflow:auto; display:flex; flex-direction:column; gap:10px; min-height:0;
     }
-    .prio-urgent{background:rgba(231,76,60,0.15); color:#ffb3ad; border:1px solid rgba(231,76,60,0.35);}
-    .prio-planned{background:rgba(241,196,15,0.15); color:#ffe58a; border:1px solid rgba(241,196,15,0.35);}
-    .prio-normal{background:rgba(46,204,113,0.12); color:#a9f5c6; border:1px solid rgba(46,204,113,0.3);}
-    .link a{color:#9fc5ff; text-decoration:none;}
-    .card-actions{display:flex; gap:6px; margin-top:8px;}
-    .card-actions button{padding:5px 8px; font-size:11px; border-radius:8px;}
-    .approve{background:rgba(46,204,113,0.15); border:1px solid rgba(46,204,113,0.35);}
-    .reject{background:rgba(231,76,60,0.15); border:1px solid rgba(231,76,60,0.35);}
+    .task{
+      background:var(--panel-2); border:1px solid #262c46; border-radius:16px; padding:10px 10px;
+      display:flex; flex-direction:column; gap:6px; cursor:grab;
+    }
+    .task.dragging{opacity:.7; transform:scale(.98);}
+    .task-title{font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:space-between;}
+    .task-meta{font-size:12px;color:var(--muted);display:flex;gap:8px;flex-wrap:wrap;}
+    .badge{
+      font-size:11px;padding:2px 6px;border-radius:999px;border:1px solid #2b3150;background:#0f1322;color:#cbd5e1;
+    }
+    .badge.urgent{border-color:#5b3b00;color:#ffd27a;background:rgba(255,176,32,.08)}
+    .badge.plan{border-color:#2a2f49;color:#cbd5e1}
+    .badge.approved{border-color:#0f3b22;color:#86efac;background:rgba(34,197,94,.08)}
+    .link{color:#93c5fd;text-decoration:none;}
+    .empty{
+      color:#6f768a;font-size:13px;text-align:center;padding:18px;border:1px dashed #2a2f49;border-radius:14px;margin-top:6px;
+    }
+
     /* Modal */
-    .backdrop{position:fixed; inset:0; background:rgba(0,0,0,0.5); display:none; z-index:20;}
+    .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;z-index:5;}
     .modal{
-      position:fixed; left:50%; top:50%; transform:translate(-50%,-50%);
-      width:min(680px,94vw); background:var(--panel-2); border:1px solid var(--border);
-      border-radius:18px; padding:14px; box-shadow:var(--shadow); display:none; z-index:21;
+      position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);
+      width:min(720px,96vw); background:var(--panel); border:1px solid #262c46; border-radius:18px;
+      padding:14px; display:none; z-index:6;
+      box-shadow:0 20px 60px rgba(0,0,0,.6);
     }
-    .modal h2{margin:4px 0 10px; font-size:16px;}
-    .grid{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
-    .row{display:flex; flex-direction:column; gap:6px;}
-    .modal footer{display:flex; justify-content:flex-end; gap:8px; margin-top:12px;}
+    .modal h4{margin:0 0 8px 0;}
+    .grid{
+      display:grid; grid-template-columns:1fr 1fr; gap:10px;
+    }
+    .grid .full{grid-column:1/-1;}
+    textarea{min-height:80px; resize:vertical;}
+    .row{display:flex; gap:8px; align-items:center;}
+    .right{margin-left:auto;}
     .small{font-size:12px;color:var(--muted);}
-    @media (max-width:900px){ main{grid-template-columns:1fr;} }
+    .divider{height:1px;background:#232842;margin:8px 0;}
+    @media (max-width:900px){
+      .board{grid-template-columns:1fr;}
+      .grid{grid-template-columns:1fr;}
+    }
   </style>
 </head>
+
 <body>
 <header>
   <div class="brand">
     <span class="dot"></span>
     <span>JM Kanban</span>
-    <span class="sub">Team board</span>
+    <span class="small">Team board</span>
   </div>
-  <div class="controls">
-    <button class="ghost" id="whoBtn"></button>
-    <button id="refreshBtn">Refresh</button>
-    <button class="primary" id="addBtn">+ Add task</button>
+
+  <div class="toolbar">
+    <input id="emailInput" style="width:220px" placeholder="yourname@cloverth.net">
+    <button class="ghost" id="loginBtn">Login</button>
+
+    <select id="langSel">
+      <option value="en">English</option>
+      <option value="zh">中文（简体）</option>
+    </select>
+
+    <button id="refreshBtn" class="ghost">Refresh</button>
+    <button id="addTaskBtn" class="primary">+ Add task</button>
   </div>
 </header>
 
-<main>
-  <section class="col" data-status="To Do">
-    <h3>To Do <span class="count" id="cntTodo">0</span></h3>
-    <div class="list" id="listTodo"></div>
+<main class="board">
+  <section class="col" data-status="To do">
+    <h3><span id="t_todo">To Do</span><span class="count" id="c_todo">0</span></h3>
+    <div class="list" id="list_todo"></div>
   </section>
 
   <section class="col" data-status="Doing">
-    <h3>Doing <span class="count" id="cntDoing">0</span></h3>
-    <div class="list" id="listDoing"></div>
+    <h3><span id="t_doing">Doing</span><span class="count" id="c_doing">0</span></h3>
+    <div class="list" id="list_doing"></div>
   </section>
 
   <section class="col" data-status="Done">
-    <h3>Done <span class="count" id="cntDone">0</span></h3>
-    <div class="list" id="listDone"></div>
+    <h3><span id="t_done">Done</span><span class="count" id="c_done">0</span></h3>
+    <div class="list" id="list_done"></div>
   </section>
 </main>
 
 <div class="backdrop" id="backdrop"></div>
-
 <div class="modal" id="taskModal">
-  <h2>Create task</h2>
+  <div class="row">
+    <h4 id="modalTitle">Create task</h4>
+    <button class="ghost right" id="closeModalBtn">✕</button>
+  </div>
   <div class="grid">
-    <div class="row">
+    <div>
       <label class="small">Title</label>
-      <input id="mTitle" placeholder="e.g. Follow up client A2-24"/>
+      <input id="m_title" placeholder="e.g. Follow up client A2-3">
     </div>
-    <div class="row">
+    <div>
       <label class="small">Assignee (email)</label>
-      <input id="mAssigneeEmail" placeholder="e.g. lita@cloverth.net"/>
+      <input id="m_assigneeEmail" placeholder="lita@cloverth.net">
     </div>
-
-    <div class="row">
+    <div>
       <label class="small">Due date</label>
-      <input id="mDue" type="date"/>
+      <input id="m_dueDate" type="date">
     </div>
-    <div class="row">
+    <div>
       <label class="small">Priority</label>
-      <select id="mPriority">
-        <option>Urgent</option>
-        <option>Planned</option>
-        <option selected>Normal</option>
+      <select id="m_priority">
+        <option value="Urgent">Urgent / 优先</option>
+        <option value="Planned" selected>Planned / 计划</option>
       </select>
     </div>
-
-    <div class="row" style="grid-column:1/3;">
-      <label class="small">Google Link (attachment)</label>
-      <input id="mLink" placeholder="Paste Google Drive/Doc/Sheet link here"/>
+    <div class="full">
+      <label class="small">Attachment Google Link</label>
+      <input id="m_attachmentLink" placeholder="https://drive.google.com/...">
     </div>
-
-    <div class="row" style="grid-column:1/3;">
+    <div class="full">
       <label class="small">Description</label>
-      <textarea id="mDesc" rows="4" placeholder="Details..."></textarea>
+      <textarea id="m_description" placeholder="Details..."></textarea>
     </div>
-
-    <div class="row">
+    <div>
       <label class="small">Initial status</label>
-      <select id="mStatus">
-        <option selected>To Do</option>
+      <select id="m_status">
+        <option>To do</option>
         <option>Doing</option>
+        <option>Done</option>
       </select>
     </div>
   </div>
-  <footer>
-    <button id="mCancel">Cancel</button>
-    <button class="primary" id="mSave">Save</button>
-  </footer>
+  <div class="divider"></div>
+  <div class="row">
+    <button class="ghost" id="cancelBtn">Cancel</button>
+    <button class="primary right" id="saveBtn">Save</button>
+  </div>
+  <p class="small" id="modalHint"></p>
+</div>
+
+<div class="modal" id="reviewModal">
+  <div class="row">
+    <h4 id="reviewTitle">Review task</h4>
+    <button class="ghost right" id="closeReviewBtn">✕</button>
+  </div>
+  <div id="reviewBody" class="small" style="line-height:1.6"></div>
+  <div class="divider"></div>
+  <div class="row">
+    <input id="rejectReason" placeholder="Reject reason (optional)" style="flex:1">
+    <button class="ghost" id="rejectBtn">Reject → Doing</button>
+    <button class="primary right" id="approveBtn">Approve ✅</button>
+  </div>
 </div>
 
 <script>
-/** ================= CONFIG ================= */
+/***********************
+ * JM Kanban Frontend v2
+ * JSONP client
+ ************************/
+
+// ====== CONFIG (replace with your webapp url) ======
 const API_BASE = "https://script.google.com/macros/s/AKfycbw5DMgrN-uG_FzPyn83P8SIg9E37BLipNTwnC5mEy2RyS_CIPTj_3XiOE-y5TahZDKP/exec";
-const COMPANY_DOMAIN = "@cloverth.net";
-const ADMINS = ["danielchang@cloverth.net"];
 
-/** ================= JSONP API ================= */
-function api(action, params={}){
+// ====== State ======
+let currentUserEmail = "";
+let isAdmin = false;
+let tasks = [];
+let users = [];
+let editingTaskId = null;
+let lang = "en";
+
+// ====== i18n ======
+const I18N = {
+  en: {
+    todo:"To Do", doing:"Doing", done:"Done",
+    noTasks:"No tasks",
+    create:"Create task", edit:"Edit task",
+    loginNeed:"Please login with your @cloverth.net email",
+    saved:"Task saved",
+    err:"Error",
+    review:"Review task",
+    approve:"Approve",
+    reject:"Reject"
+  },
+  zh:{
+    todo:"待办", doing:"进行中", done:"已完成",
+    noTasks:"暂无任务",
+    create:"创建任务", edit:"编辑任务",
+    loginNeed:"请用 @cloverth.net 邮箱登录",
+    saved:"任务已保存",
+    err:"错误",
+    review:"审批任务",
+    approve:"通过",
+    reject:"退回"
+  }
+};
+
+function t(k){ return (I18N[lang]||I18N.en)[k]||k; }
+
+// ====== JSONP ======
+function apiJsonp(action, params={}){
   return new Promise((resolve,reject)=>{
-    const cb = "cb_"+Math.random().toString(36).slice(2);
-    const qs = new URLSearchParams({ action, callback: cb, ...params }).toString();
-    const url = API_BASE + "?" + qs;
-    const script = document.createElement("script");
+    const cb = "cb_" + Math.random().toString(36).slice(2);
+    params.action = action;
+    params.userEmail = currentUserEmail;
 
-    window[cb] = (res)=>{
+    const qs = new URLSearchParams(params);
+    qs.set("callback", cb);
+
+    const script = document.createElement("script");
+    script.src = API_BASE + "?" + qs.toString();
+
+    window[cb] = (data)=>{
+      resolve(data);
+      cleanup();
+    };
+    script.onerror = ()=>{ reject(new Error("JSONP load error")); cleanup(); };
+
+    function cleanup(){
       delete window[cb];
       script.remove();
-      if (!res || res.ok === false) reject(res && res.error || "API error");
-      else resolve(res.data);
-    };
-    script.onerror = ()=>{
-      delete window[cb];
-      script.remove();
-      reject("JSONP load error");
-    };
-    script.src = url;
+    }
+
     document.body.appendChild(script);
   });
 }
 
-/** ================= State ================= */
-let currentUserEmail = "";
-let directory = [];
-let tasks = [];
+// ====== Boot ======
+initUI();
+autoLoginFromLocal();
 
-/** ================= Login ================= */
-async function login(){
-  currentUserEmail = localStorage.getItem("jm_user_email") || "";
-  if (!currentUserEmail || !currentUserEmail.endsWith(COMPANY_DOMAIN)) {
-    currentUserEmail = prompt("Please enter your company email (xxx@cloverth.net):","")?.trim().toLowerCase() || "";
-    if (!currentUserEmail.endsWith(COMPANY_DOMAIN)) {
-      alert("Login failed: must be @cloverth.net");
-      throw new Error("bad email");
+async function autoLoginFromLocal(){
+  const saved = localStorage.getItem("jm_user_email") || "";
+  if (saved){
+    document.getElementById("emailInput").value = saved;
+    await login(saved);
+  }
+}
+
+function initUI(){
+  document.getElementById("langSel").addEventListener("change", e=>{
+    lang = e.target.value;
+    localStorage.setItem("jm_lang", lang);
+    render();
+  });
+  lang = localStorage.getItem("jm_lang") || "en";
+  document.getElementById("langSel").value = lang;
+
+  document.getElementById("loginBtn").addEventListener("click", ()=>{
+    const email = document.getElementById("emailInput").value.trim().toLowerCase();
+    login(email);
+  });
+  document.getElementById("refreshBtn").addEventListener("click", loadAll);
+  document.getElementById("addTaskBtn").addEventListener("click", ()=>openModal());
+
+  // modal
+  document.getElementById("closeModalBtn").onclick = closeModal;
+  document.getElementById("cancelBtn").onclick = closeModal;
+  document.getElementById("saveBtn").onclick = saveTask;
+
+  // review modal
+  document.getElementById("closeReviewBtn").onclick = closeReview;
+  document.getElementById("approveBtn").onclick = approveTask;
+  document.getElementById("rejectBtn").onclick = rejectTask;
+}
+
+async function login(email){
+  try{
+    if (!email.endsWith("@cloverth.net")){
+      alert(t("loginNeed"));
+      return;
     }
-    localStorage.setItem("jm_user_email", currentUserEmail);
+    currentUserEmail = email;
+    localStorage.setItem("jm_user_email", email);
+
+    const uRes = await apiJsonp("listUsers", {});
+    users = (uRes.users || []);
+    const me = users.find(u=>u.email===email);
+
+    if (!me){
+      alert("You are not in Directory sheet yet.");
+      return;
+    }
+
+    isAdmin = (email==="danielchang@cloverth.net"); // soft admin match (mirror backend list)
+    await loadAll();
+  }catch(e){
+    alert(t("err")+": "+e.message);
   }
+}
 
-  directory = await api("getDirectory");
-  const exists = directory.some(d => (d.email||"").toLowerCase() === currentUserEmail);
-  const isAdmin = ADMINS.includes(currentUserEmail);
-
-  if (!exists && !isAdmin){
-    alert("Your email is not in Directory sheet.");
-    throw new Error("not in directory");
+async function loadAll(){
+  if (!currentUserEmail) return;
+  try{
+    const res = await apiJsonp("listTasks", {});
+    tasks = res.tasks || [];
+    render();
+  }catch(e){
+    alert(t("err")+": "+e.message);
   }
-
-  document.getElementById("whoBtn").textContent =
-    isAdmin ? ("Admin: "+currentUserEmail) : currentUserEmail;
 }
 
-/** ================= Render ================= */
-function clearLists(){
-  ["listTodo","listDoing","listDone"].forEach(id=>document.getElementById(id).innerHTML="");
-}
-function prioClass(p){
-  if (p==="Urgent") return "prio-urgent";
-  if (p==="Planned") return "prio-planned";
-  return "prio-normal";
-}
+// ====== Render ======
 function render(){
-  clearLists();
-  const byStatus = { "To Do":[], "Doing":[], "Done":[], "Done(Approved)":[] };
+  document.getElementById("t_todo").textContent = t("todo");
+  document.getElementById("t_doing").textContent = t("doing");
+  document.getElementById("t_done").textContent = t("done");
 
-  tasks.forEach(t=>{
-    const st = t.status || "To Do";
-    if (!byStatus[st]) byStatus[st]=[];
-    byStatus[st].push(t);
-  });
+  const byStatus = {
+    "To do": tasks.filter(x=>(x.status||"").toLowerCase()==="to do"),
+    "Doing": tasks.filter(x=>(x.status||"").toLowerCase()==="doing"),
+    "Done": tasks.filter(x=>(x.status||"").toLowerCase()==="done")
+  };
 
-  const todo = byStatus["To Do"];
-  const doing = byStatus["Doing"];
-  const done = [...byStatus["Done"], ...byStatus["Done(Approved)"]];
+  renderList("list_todo", byStatus["To do"]);
+  renderList("list_doing", byStatus["Doing"]);
+  renderList("list_done", byStatus["Done"]);
 
-  document.getElementById("cntTodo").textContent = todo.length;
-  document.getElementById("cntDoing").textContent = doing.length;
-  document.getElementById("cntDone").textContent = done.length;
+  document.getElementById("c_todo").textContent = byStatus["To do"].length;
+  document.getElementById("c_doing").textContent = byStatus["Doing"].length;
+  document.getElementById("c_done").textContent = byStatus["Done"].length;
 
-  todo.forEach(t=>document.getElementById("listTodo").appendChild(card(t)));
-  doing.forEach(t=>document.getElementById("listDoing").appendChild(card(t)));
-  done.forEach(t=>document.getElementById("listDone").appendChild(card(t)));
+  enableDnD();
 }
 
-function card(t){
-  const el = document.createElement("div");
-  el.className="card";
-  el.draggable = true;
-  el.dataset.id = t.id;
-  el.dataset.status = t.status||"To Do";
-
-  el.innerHTML = `
-    <div class="title">${escapeHtml(t.title||"")}</div>
-    <div class="desc">${escapeHtml(t.description||"")}</div>
-    <div class="meta">
-      <span class="chip ${prioClass(t.priority)}">${t.priority||"Normal"}</span>
-      ${t.assigneeName ? `<span class="chip">@${escapeHtml(t.assigneeName)} (${escapeHtml(t.assigneeEmail||"")})</span>`:""}
-      ${t.dueDate ? `<span class="chip">Due: ${new Date(t.dueDate).toLocaleDateString()}</span>`:""}
-      ${t.googleLink ? `<span class="chip link"><a href="${t.googleLink}" target="_blank">Open Link</a></span>`:""}
-      ${t.createdBy ? `<span class="chip">By: ${escapeHtml(t.createdBy)}</span>`:""}
-    </div>
-  `;
-
-  // Approve/Reject buttons (only for Done status, and only creator/admin)
-  const isAdmin = ADMINS.includes(currentUserEmail);
-  const canResolve = isAdmin || (t.createdBy && t.createdBy.toLowerCase()===currentUserEmail);
-  const isDonePending = (t.status==="Done");
-
-  if (isDonePending && canResolve){
-    const actions = document.createElement("div");
-    actions.className="card-actions";
-    actions.innerHTML = `
-      <button class="approve">Approve</button>
-      <button class="reject">Reject</button>
-    `;
-    actions.querySelector(".approve").onclick = ()=>resolveTask(t.id,"approved");
-    actions.querySelector(".reject").onclick = ()=>resolveTask(t.id,"rejected");
-    el.appendChild(actions);
-  }
-
-  el.addEventListener("dragstart", (ev)=>{
-    ev.dataTransfer.setData("text/plain", t.id);
-  });
-
-  return el;
-}
-
-/** ================= Data ================= */
-async function loadTasks(){
-  tasks = await api("getTasks", { userEmail: currentUserEmail });
-  render();
-}
-
-async function addTask(payload){
-  payload.createdBy = currentUserEmail;
-  await api("addTask", payload);
-  await loadTasks();
-}
-
-async function moveStatus(id, status){
-  await api("updateStatus", { id, status, userEmail: currentUserEmail });
-  await loadTasks();
-}
-
-async function resolveTask(id, resolution){
-  await api("resolveTask", { id, resolution, userEmail: currentUserEmail });
-  await loadTasks();
-}
-
-/** ================= Drag & Drop ================= */
-document.querySelectorAll(".list").forEach(list=>{
-  list.addEventListener("dragover", (e)=>{
-    e.preventDefault();
-    list.classList.add("dragover");
-  });
-  list.addEventListener("dragleave", ()=>list.classList.remove("dragover"));
-  list.addEventListener("drop", async (e)=>{
-    e.preventDefault();
-    list.classList.remove("dragover");
-    const id = e.dataTransfer.getData("text/plain");
-    const col = list.closest(".col");
-    const newStatus = col.dataset.status;
-    await moveStatus(id, newStatus);
-  });
-});
-
-/** ================= Modal ================= */
-const backdrop = document.getElementById("backdrop");
-const modal = document.getElementById("taskModal");
-function openModal(){
-  backdrop.style.display="block";
-  modal.style.display="block";
-}
-function closeModal(){
-  backdrop.style.display="none";
-  modal.style.display="none";
-}
-document.getElementById("addBtn").onclick=openModal;
-document.getElementById("mCancel").onclick=closeModal;
-backdrop.onclick=closeModal;
-
-document.getElementById("mSave").onclick=async ()=>{
-  const title = document.getElementById("mTitle").value.trim();
-  const description = document.getElementById("mDesc").value.trim();
-  const assigneeEmail = document.getElementById("mAssigneeEmail").value.trim().toLowerCase();
-  const dueDate = document.getElementById("mDue").value;
-  const priority = document.getElementById("mPriority").value;
-  const status = document.getElementById("mStatus").value;
-  const googleLink = document.getElementById("mLink").value.trim();
-
-  if(!title){ alert("Title required"); return; }
-  if(assigneeEmail && !assigneeEmail.endsWith(COMPANY_DOMAIN)){
-    alert("Assignee must be @cloverth.net");
+function renderList(elId, list){
+  const el = document.getElementById(elId);
+  el.innerHTML = "";
+  if (!list.length){
+    const div = document.createElement("div");
+    div.className = "empty";
+    div.textContent = t("noTasks");
+    el.appendChild(div);
     return;
   }
-
-  await addTask({
-    title, description, assigneeEmail,
-    dueDate: dueDate ? new Date(dueDate).toISOString() : "",
-    priority, status, googleLink
+  list.sort((a,b)=>{
+    // urgent first
+    if (a.priority!==b.priority){
+      return (a.priority==="Urgent") ? -1 : 1;
+    }
+    return (a.dueDate||"").localeCompare(b.dueDate||"");
   });
 
-  // reset
-  ["mTitle","mAssigneeEmail","mDesc","mDue","mLink"].forEach(id=>document.getElementById(id).value="");
-  document.getElementById("mPriority").value="Normal";
-  document.getElementById("mStatus").value="To Do";
-  closeModal();
-};
-
-/** ================= Utils ================= */
-function escapeHtml(s){
-  return (s||"").replace(/[&<>"']/g, m=>({
-    "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"
-  }[m]));
+  list.forEach(task=>{
+    el.appendChild(taskCard(task));
+  });
 }
 
-/** ================= Boot ================= */
-(async function init(){
-  try{
-    await login();
-    await loadTasks();
-    // auto refresh every 30s
-    setInterval(()=>loadTasks().catch(()=>{}), 30000);
-  }catch(err){
-    console.error(err);
-    alert("Init error: " + err);
+function taskCard(task){
+  const div = document.createElement("div");
+  div.className = "task";
+  div.draggable = true;
+  div.dataset.id = task.id;
+
+  const title = document.createElement("div");
+  title.className = "task-title";
+  title.innerHTML = `
+    <span>${escapeHtml(task.title)}</span>
+    <span class="small">${task.assigneeName?("@"+task.assigneeName):""}</span>
+  `;
+
+  const meta = document.createElement("div");
+  meta.className = "task-meta";
+
+  const pri = document.createElement("span");
+  pri.className = "badge " + (task.priority==="Urgent"?"urgent":"plan");
+  pri.textContent = task.priority;
+
+  const due = document.createElement("span");
+  due.className = "badge";
+  due.textContent = task.dueDate ? ("Due: "+task.dueDate) : "No due date";
+
+  meta.appendChild(pri);
+  meta.appendChild(due);
+
+  if (task.attachmentLink){
+    const link = document.createElement("a");
+    link.href = task.attachmentLink;
+    link.target = "_blank";
+    link.className = "badge link";
+    link.textContent = "Google Link";
+    meta.appendChild(link);
   }
-})();
-document.getElementById("refreshBtn").onclick=loadTasks;
+
+  if (String(task.approved).toUpperCase()==="TRUE"){
+    const ap = document.createElement("span");
+    ap.className="badge approved";
+    ap.textContent="Approved";
+    meta.appendChild(ap);
+  }
+
+  const desc = document.createElement("div");
+  desc.className="small";
+  desc.textContent = task.description || "";
+
+  // click = open edit or review
+  div.addEventListener("click", ()=>{
+    // creator sees done not approved => open review
+    if ((task.status||"").toLowerCase()==="done"
+       && String(task.approved).toUpperCase()!=="TRUE"
+       && (task.createdBy===currentUserEmail || isAdmin)){
+      openReview(task);
+    } else {
+      openModal(task);
+    }
+  });
+
+  div.appendChild(title);
+  div.appendChild(meta);
+  if (task.description) div.appendChild(desc);
+  return div;
+}
+
+function escapeHtml(s){
+  return String(s||"").replace(/[<>&"]/g, c=>({ "<":"&lt;",">":"&gt;","&":"&amp;",'"':"&quot;" }[c]));
+}
+
+// ====== Drag & Drop ======
+function enableDnD(){
+  document.querySelectorAll(".task").forEach(t=>{
+    t.addEventListener("dragstart", e=>{
+      t.classList.add("dragging");
+      e.dataTransfer.setData("text/plain", t.dataset.id);
+    });
+    t.addEventListener("dragend", ()=>t.classList.remove("dragging"));
+  });
+  document.querySelectorAll(".col").forEach(col=>{
+    col.addEventListener("dragover", e=>e.preventDefault());
+    col.addEventListener("drop", async e=>{
+      e.preventDefault();
+      const id = e.dataTransfer.getData("text/plain");
+      const toStatus = col.dataset.status;
+      await moveTask(id, toStatus);
+    });
+  });
+}
+
+async function moveTask(id, toStatus){
+  try{
+    await apiJsonp("moveTask", { id, toStatus });
+    await loadAll();
+  }catch(e){
+    alert(t("err")+": "+e.message);
+  }
+}
+
+// ====== Create / Edit Modal ======
+function openModal(task=null){
+  editingTaskId = task?task.id:null;
+  document.getElementById("modalTitle").textContent = task?t("edit"):t("create");
+  document.getElementById("m_title").value = task?task.title:"";
+  document.getElementById("m_assigneeEmail").value = task?task.assigneeEmail:"";
+  document.getElementById("m_dueDate").value = task?toDateInput_(task.dueDate):"";
+  document.getElementById("m_priority").value = task?task.priority:"Planned";
+  document.getElementById("m_attachmentLink").value = task?task.attachmentLink:"";
+  document.getElementById("m_description").value = task?task.description:"";
+  document.getElementById("m_status").value = task?task.status:"To do";
+
+  document.getElementById("backdrop").style.display="block";
+  document.getElementById("taskModal").style.display="block";
+}
+
+function closeModal(){
+  document.getElementById("backdrop").style.display="none";
+  document.getElementById("taskModal").style.display="none";
+}
+
+// ====== Save ======
+async function saveTask(){
+  try{
+    if (!currentUserEmail){ alert(t("loginNeed")); return; }
+
+    const payload = {
+      id: editingTaskId || undefined,
+      title: document.getElementById("m_title").value.trim(),
+      assigneeEmail: document.getElementById("m_assigneeEmail").value.trim().toLowerCase(),
+      dueDate: document.getElementById("m_dueDate").value || "",
+      priority: document.getElementById("m_priority").value,
+      attachmentLink: document.getElementById("m_attachmentLink").value.trim(),
+      description: document.getElementById("m_description").value.trim(),
+      status: document.getElementById("m_status").value
+    };
+
+    if (!payload.title || !payload.assigneeEmail){
+      alert("title / assigneeEmail required");
+      return;
+    }
+
+    if (!editingTaskId){
+      await apiJsonp("createTask", { payload: JSON.stringify(payload) });
+    } else {
+      await apiJsonp("updateTask", { payload: JSON.stringify(payload) });
+    }
+
+    closeModal();
+    await loadAll();
+    alert(t("saved"));
+  }catch(e){
+    alert(t("err")+": "+e.message);
+  }
+}
+
+function toDateInput_(d){
+  if (!d) return "";
+  // already yyyy-mm-dd
+  if (/^\d{4}-\d{2}-\d{2}$/.test(d)) return d;
+  return d;
+}
+
+// ====== Review modal ======
+let reviewingTask = null;
+
+function openReview(task){
+  reviewingTask = task;
+  document.getElementById("reviewTitle").textContent = t("review")+": "+task.title;
+  document.getElementById("reviewBody").innerHTML = `
+    <div><b>Assignee:</b> ${task.assigneeName} (${task.assigneeEmail})</div>
+    <div><b>Priority:</b> ${task.priority}</div>
+    <div><b>Due:</b> ${task.dueDate||"-"}</div>
+    ${task.attachmentLink? `<div><b>Link:</b> <a class="link" target="_blank" href="${task.attachmentLink}">${task.attachmentLink}</a></div>`:""}
+    <div style="margin-top:6px"><b>Description:</b><br>${escapeHtml(task.description||"")}</div>
+  `;
+  document.getElementById("rejectReason").value = "";
+
+  document.getElementById("backdrop").style.display="block";
+  document.getElementById("reviewModal").style.display="block";
+}
+
+function closeReview(){
+  reviewingTask = null;
+  document.getElementById("backdrop").style.display="none";
+  document.getElementById("reviewModal").style.display="none";
+}
+
+async function approveTask(){
+  if (!reviewingTask) return;
+  try{
+    await apiJsonp("approveTask", { id: reviewingTask.id });
+    closeReview();
+    await loadAll();
+  }catch(e){
+    alert(t("err")+": "+e.message);
+  }
+}
+
+async function rejectTask(){
+  if (!reviewingTask) return;
+  try{
+    const reason = document.getElementById("rejectReason").value.trim() || "Need rework";
+    await apiJsonp("rejectTask", { id: reviewingTask.id, reason });
+    closeReview();
+    await loadAll();
+  }catch(e){
+    alert(t("err")+": "+e.message);
+  }
+}
 </script>
 </body>
 </html>
