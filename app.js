@@ -4,36 +4,34 @@ const API_BASE = "https://script.google.com/macros/s/AKfycbw5DMgrN-uG_FzPyn83P8S
 /*************** STATE ***************/
 let actor = null;
 let tasks = [];
-let isLoading = false;
-let autoTimer = null;
+let isSaving = false;
 
-/*************** JSONP Helper (append to HEAD, not BODY) ***************/
+/*************** JSONP Helper (safe for mobile) ***************/
 function jsonp(action, params = {}) {
   return new Promise((resolve, reject) => {
     const cb = "cb_" + Math.random().toString(36).slice(2);
     params.action = action;
     params.callback = cb;
+
     const qs = new URLSearchParams(params).toString();
     const url = API_BASE + "?" + qs;
 
-    const script = document.createElement("script");
-
     window[cb] = (data) => {
-      delete window[cb];
-      script.remove();
+      try { delete window[cb]; } catch {}
+      if (script && script.parentNode) script.parentNode.removeChild(script);
       resolve(data);
     };
 
+    const script = document.createElement("script");
     script.src = url;
-    script.async = true;
     script.onerror = () => {
-      delete window[cb];
-      script.remove();
+      try { delete window[cb]; } catch {}
+      if (script && script.parentNode) script.parentNode.removeChild(script);
       reject(new Error("JSONP load error"));
     };
 
-    // 用 head 更稳，避免 body 为空时报错
-    document.head.appendChild(script);
+    // IMPORTANT: body might not exist on iOS if called too early
+    (document.body || document.documentElement).appendChild(script);
   });
 }
 
@@ -54,45 +52,36 @@ async function ensureLogin(){
 
   actor = res;
   localStorage.setItem("jm_user_email", actor.email);
-  document.getElementById("userPill").textContent = actor.email + (actor.admin ? " (admin)" : "");
-  document.getElementById("logoutBtn").style.display = "";
+  $("#userPill").textContent = actor.email + (actor.admin ? " (admin)" : "");
+  $("#logoutBtn").style.display = "";
 }
 
-/*************** LOAD TASKS (anti-overlap) ***************/
+/*************** LOAD TASKS ***************/
 async function loadTasks(){
-  if (!actor || isLoading) return;
-  isLoading = true;
-  try{
-    const res = await jsonp("listTasks", { email: actor.email });
-    if (!res.ok) throw new Error(res.error);
+  const res = await jsonp("listTasks", { email: actor.email });
+  if (!res.ok) throw new Error(res.error);
 
-    tasks = res.tasks || [];
-    render();
-  }catch(e){
-    console.error(e);
-    alert("Load tasks error: " + e.message);
-  }finally{
-    isLoading = false;
-  }
+  tasks = res.tasks || [];
+  render();
 }
 
 /*************** RENDER ***************/
 function render(){
-  const todo = tasks.filter(t => t.status==="To Do");
+  const todo  = tasks.filter(t => t.status==="To Do");
   const doing = tasks.filter(t => t.status==="Doing");
-  const done = tasks.filter(t => t.status==="Done" || t.status==="Approved");
+  const done  = tasks.filter(t => t.status==="Done" || t.status==="Approved");
 
   setCol("todoCards", todo);
   setCol("doingCards", doing);
   setCol("doneCards", done);
 
-  document.getElementById("c_todo").textContent = todo.length;
-  document.getElementById("c_doing").textContent = doing.length;
-  document.getElementById("c_done").textContent = done.length;
+  $("#c_todo").textContent  = todo.length;
+  $("#c_doing").textContent = doing.length;
+  $("#c_done").textContent  = done.length;
 }
 
 function setCol(id, list){
-  const el = document.getElementById(id);
+  const el = $("#"+id);
   el.innerHTML = "";
   list.forEach(t => el.appendChild(cardEl(t)));
 }
@@ -131,7 +120,6 @@ function cardEl(t){
     </div>
   `;
 
-  // status change
   card.querySelector(".statusSel").addEventListener("change", async (e)=>{
     const newStatus = e.target.value;
 
@@ -141,18 +129,14 @@ function cardEl(t){
       return;
     }
 
-    try{
-      if (newStatus==="Doing" && t.status==="Done" && canApprove(t)) {
-        const reason = prompt("Reason to return to Doing?") || "";
-        await jsonp("returnToDoing", { actorEmail: actor.email, id: t.id, reason });
-      } else {
-        await jsonp("moveTask", { actorEmail: actor.email, id: t.id, status: newStatus });
-      }
-      await loadTasks();
-    }catch(err){
-      alert(err.message);
-      e.target.value = t.status;
+    if (newStatus==="Doing" && t.status==="Done" && canApprove(t)) {
+      const reason = prompt("Reason to return to Doing?") || "";
+      await jsonp("returnToDoing", { actorEmail: actor.email, id: t.id, reason });
+    } else {
+      await jsonp("moveTask", { actorEmail: actor.email, id: t.id, status: newStatus });
     }
+
+    await loadTasks();
   });
 
   const editBtn = card.querySelector(".editBtn");
@@ -167,7 +151,6 @@ function cardEl(t){
     await loadTasks();
   });
 
-  // drag
   card.addEventListener("dragstart", (ev)=>{
     ev.dataTransfer.setData("text/plain", t.id);
   });
@@ -193,14 +176,10 @@ function canApprove(t){
 
 /*************** MODALS ***************/
 function openModal(html){
-  const bd = document.getElementById("backdrop");
-  const m = document.getElementById("modal");
-  m.innerHTML = html;
-  bd.style.display="flex";
+  $("#modal").innerHTML = html;
+  $("#backdrop").style.display="flex";
 }
-function closeModal(){
-  document.getElementById("backdrop").style.display="none";
-}
+function closeModal(){ $("#backdrop").style.display="none"; }
 
 function openCreate(){
   openModal(renderTaskForm({mode:"create"}));
@@ -221,9 +200,10 @@ async function openDetail(t){
     <div class="field"><label>Title</label><div>${escapeHtml(t.title||"")}</div></div>
     <div class="field"><label>Description</label><div style="white-space:pre-wrap">${escapeHtml(t.description||"")}</div></div>
     <div class="field"><label>Assignee</label><div>${escapeHtml(t.assigneeName||"")} (${escapeHtml(t.assigneeEmail||"")})</div></div>
-    <div class="field"><label>Priority</label><div>${escapeHtml(t.priority||"Normal")}</div></div>
-    <div class="field"><label>Status</label><div>${escapeHtml(t.status||"")}</div></div>
+    <div class="field"><label>Priority</label><div>${t.priority}</div></div>
+    <div class="field"><label>Status</label><div>${t.status}</div></div>
     <div class="field"><label>Due date</label><div>${fmtDate(t.dueDate)}</div></div>
+
     <div class="field"><label>Links</label>
       <div class="links">
         ${t.link1?`<a target="_blank" href="${t.link1}">${t.link1}</a><br>`:""}
@@ -235,21 +215,17 @@ async function openDetail(t){
     <div class="comment">
       <h4 style="margin:0 0 6px 0;">Comments</h4>
       <div id="cList">
-        ${
-          comments.map(c=>{
-            const text = c.text ?? c.comment ?? "";
-            const author = c.authorEmail ?? c.author ?? c.authorName ?? "";
-            const when = c.createdAt || c.ts || "";
-            return `
-              <div class="citem">
-                <div>${escapeHtml(text)}</div>
-                <div class="cmeta">${escapeHtml(author)} · ${fmtDateTime(when)}</div>
-              </div>
-            `;
-          }).join("")
-          || `<div class="cmeta">No comments yet.</div>`
-        }
+        ${comments.map(c=>{
+          // backend might send "text" or "comment" depending on old/new sheet
+          const msg = c.text || c.comment || "";
+          return `
+          <div class="citem">
+            <div>${escapeHtml(msg)}</div>
+            <div class="cmeta">${escapeHtml(c.authorEmail||"")} · ${fmtDateTime(c.createdAt)}</div>
+          </div>`;
+        }).join("") || `<div class="cmeta">No comments yet.</div>`}
       </div>
+
       <div class="comment-box">
         <input id="cInput" placeholder="Write a comment..."/>
         <button id="cSend" class="primary">Send</button>
@@ -265,20 +241,20 @@ async function openDetail(t){
     </div>
   `);
 
-  document.getElementById("cSend").addEventListener("click", async ()=>{
-    const text = document.getElementById("cInput").value.trim();
+  $("#cSend").addEventListener("click", async ()=>{
+    const text = $("#cInput").value.trim();
     if (!text) return;
     await jsonp("addComment",{actorEmail:actor.email, taskId:t.id, text});
-    await openDetail(t); // reload detail
+    await openDetail(t);
   });
 
-  const approveBtn = document.getElementById("approveBtn");
+  const approveBtn = $("#approveBtn");
   if (approveBtn) approveBtn.addEventListener("click", async ()=>{
     await jsonp("approve",{actorEmail:actor.email, id:t.id});
     closeModal(); await loadTasks();
   });
 
-  const returnBtn = document.getElementById("returnBtn");
+  const returnBtn = $("#returnBtn");
   if (returnBtn) returnBtn.addEventListener("click", async ()=>{
     const reason = prompt("Reason to return to Doing?") || "";
     await jsonp("returnToDoing",{actorEmail:actor.email, id:t.id, reason});
@@ -304,6 +280,7 @@ function renderTaskForm({mode, task={}}){
         <label>Assignee (email)</label>
         <input id="f_assigneeEmail" value="${escapeAttr(t.assigneeEmail||"")}" placeholder="xxx@cloverth.net"/>
       </div>
+
       <div class="field">
         <label>Priority</label>
         <select id="f_priority">
@@ -315,6 +292,7 @@ function renderTaskForm({mode, task={}}){
         <label>Due date (required)</label>
         <input id="f_dueDate" type="date" value="${t.dueDate?toInputDate(t.dueDate):""}"/>
       </div>
+
       <div class="field">
         <label>Status</label>
         <select id="f_status">
@@ -351,23 +329,22 @@ function renderTaskForm({mode, task={}}){
 }
 
 function bindForm({mode, task={}}){
-  const saveBtn = document.getElementById("saveBtn");
-
-  saveBtn.addEventListener("click", async ()=>{
-    if (saveBtn.disabled) return; // 防止双击导致重复任务
-    saveBtn.disabled = true;
+  $("#saveBtn").addEventListener("click", async ()=>{
+    if (isSaving) return;          // ✅ prevent double submit
+    isSaving = true;
+    $("#saveBtn").disabled = true;
 
     try{
-      const title = document.getElementById("f_title").value.trim();
-      const assigneeName = document.getElementById("f_assigneeName").value.trim();
-      const assigneeEmail = document.getElementById("f_assigneeEmail").value.trim().toLowerCase();
-      const priority = document.getElementById("f_priority").value;
-      const status = document.getElementById("f_status").value;
-      const dueDate = document.getElementById("f_dueDate").value;
-      const description = document.getElementById("f_description").value.trim();
-      const link1 = document.getElementById("f_link1").value.trim();
-      const link2 = document.getElementById("f_link2").value.trim();
-      const link3 = document.getElementById("f_link3").value.trim();
+      const title = $("#f_title").value.trim();
+      const assigneeName = $("#f_assigneeName").value.trim();
+      const assigneeEmail = $("#f_assigneeEmail").value.trim().toLowerCase();
+      const priority = $("#f_priority").value;
+      const status = $("#f_status").value;
+      const dueDate = $("#f_dueDate").value;
+      const description = $("#f_description").value.trim();
+      const link1 = $("#f_link1").value.trim();
+      const link2 = $("#f_link2").value.trim();
+      const link3 = $("#f_link3").value.trim();
 
       if (!title) return alert("Title required");
       if (!assigneeEmail.endsWith("@cloverth.net")) return alert("Assignee must be cloverth email");
@@ -377,9 +354,7 @@ function bindForm({mode, task={}}){
         const res = await jsonp("createTask", {
           actorEmail: actor.email,
           title, description, assigneeName, assigneeEmail,
-          priority, status,
-          dueDate,
-          link1, link2, link3
+          priority, status, dueDate, link1, link2, link3
         });
         if (!res.ok) return alert(res.error);
       } else {
@@ -387,34 +362,36 @@ function bindForm({mode, task={}}){
           actorEmail: actor.email,
           id: task.id,
           title, description, assigneeName, assigneeEmail,
-          priority, status,
-          dueDate,
-          link1, link2, link3
+          priority, status, dueDate, link1, link2, link3
         });
         if (!res.ok) return alert(res.error);
       }
 
       closeModal();
       await loadTasks();
-    } finally {
-      saveBtn.disabled = false;
+    } finally{
+      isSaving = false;
+      $("#saveBtn").disabled = false;
     }
   });
 }
 
 /*************** DRAG DROP ***************/
-document.querySelectorAll(".col").forEach(col=>{
-  col.addEventListener("dragover", e=>e.preventDefault());
-  col.addEventListener("drop", async e=>{
-    e.preventDefault();
-    const id = e.dataTransfer.getData("text/plain");
-    const status = col.dataset.status;
-    await jsonp("moveTask",{actorEmail:actor.email, id, status});
-    await loadTasks();
+function initDragDrop(){
+  document.querySelectorAll(".col").forEach(col=>{
+    col.addEventListener("dragover", e=>e.preventDefault());
+    col.addEventListener("drop", async e=>{
+      e.preventDefault();
+      const id = e.dataTransfer.getData("text/plain");
+      const status = col.dataset.status;
+      await jsonp("moveTask",{actorEmail:actor.email, id, status});
+      await loadTasks();
+    });
   });
-});
+}
 
 /*************** UTIL ***************/
+function $(sel){ return document.querySelector(sel); }
 function fmtDate(d){
   if (!d) return "-";
   try{ return new Date(d).toISOString().slice(0,10); }catch{ return d; }
@@ -432,26 +409,24 @@ function escapeHtml(s){
 }
 function escapeAttr(s){ return escapeHtml(s).replace(/"/g,"&quot;"); }
 
-/*************** INIT ***************/
-window.addEventListener("DOMContentLoaded", async ()=>{
+/*************** INIT (safe) ***************/
+document.addEventListener("DOMContentLoaded", async ()=>{
   try{
     await ensureLogin();
     await loadTasks();
+    initDragDrop();
   }catch(err){
     console.error(err);
     alert("Init error: " + err.message);
   }
 
-  document.getElementById("addBtn").addEventListener("click", openCreate);
-  document.getElementById("refreshBtn").addEventListener("click", loadTasks);
+  $("#addBtn").addEventListener("click", openCreate);
+  $("#refreshBtn").addEventListener("click", loadTasks);
 
-  document.getElementById("logoutBtn").addEventListener("click", ()=>{
+  $("#logoutBtn").addEventListener("click", ()=>{
     localStorage.removeItem("jm_user_email");
     location.reload();
   });
 
-  // auto refresh every 60s, but avoid stacking
-  autoTimer = setInterval(()=>{
-    if (!isLoading) loadTasks();
-  }, 60000);
+  setInterval(loadTasks, 60000);
 });
